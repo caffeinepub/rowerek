@@ -9,11 +9,13 @@ interface ActivityCardProps {
   onClick: () => void;
 }
 
-function BatteryBars({ duration }: { duration: number }) {
+// duration is stored in half-hours (1 = 30min, 2 = 1h, ..., 8 = 4h)
+function BatteryBars({ durationHalfHours }: { durationHalfHours: number }) {
+  const capped = Math.min(durationHalfHours, 8);
   return (
-    <div className="absolute right-[3px] top-[3px] bottom-[3px] flex flex-col justify-between w-[5px] gap-[2px]">
-      {[0, 1, 2, 3].map((pos) => {
-        const filled = duration > 0 && duration >= 4 - pos;
+    <div className="absolute right-[3px] top-[3px] bottom-[3px] flex flex-col justify-between w-[5px] gap-[1px]">
+      {[0, 1, 2, 3, 4, 5, 6, 7].map((pos) => {
+        const filled = capped > 0 && capped >= 8 - pos;
         return (
           <div
             key={pos}
@@ -34,33 +36,43 @@ export default function ActivityCard({
   onClick,
 }: ActivityCardProps) {
   const color = getUsernameColor(activity.username);
-  const dur = Number(activity.durationHours);
+  const durationHalfHours = Number(activity.durationHours);
+  const displayName =
+    activity.username.length > 11
+      ? activity.username.slice(0, 11)
+      : activity.username;
 
   return (
     <button
       type="button"
-      className={`relative w-full text-left cursor-pointer rounded-md border transition-all card-press select-none min-h-[60px] bg-primary/5 ${
+      className={`relative w-full text-left cursor-pointer rounded-md border transition-all card-press select-none bg-primary/5 ${
         isMatching ? "glow-green" : "border-border hover:border-primary/40"
       }`}
-      style={{ padding: "4px", paddingRight: "12px" }}
-      onClick={onClick}
+      style={{ padding: "4px", paddingRight: "14px" }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
       data-ocid={`activity.card.item.${index}`}
     >
       {/* Top row: emoji + time */}
-      <div className="flex items-center justify-between gap-1 mb-1">
-        <span className="text-lg leading-none">{activity.emoji}</span>
-        <span className="text-[11px] font-mono font-bold text-foreground leading-none">
+      <div className="flex items-center justify-between gap-1">
+        <span className="text-2xl leading-none">{activity.emoji}</span>
+        <span
+          className="text-[13px] font-mono font-bold leading-none"
+          style={{ color: "#7dd3fc" }}
+        >
           {activity.startTime}
         </span>
       </div>
-      {/* Username */}
+      {/* Gap + Username centered */}
       <div
-        className="text-[12px] font-semibold truncate leading-none"
-        style={{ color }}
+        className="text-[13px] font-semibold leading-none text-center truncate"
+        style={{ color, marginTop: "4px" }}
       >
-        {activity.username}
+        {displayName}
       </div>
-      <BatteryBars duration={dur} />
+      <BatteryBars durationHalfHours={durationHalfHours} />
     </button>
   );
 }

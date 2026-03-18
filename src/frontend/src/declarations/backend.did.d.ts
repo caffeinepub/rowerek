@@ -22,23 +22,20 @@ export interface Activity {
 export type Role = { 'admin' : null } |
   { 'user' : null };
 export interface _SERVICE {
+  '_isAdmin' : ActorMethod<[string], boolean>,
   'addActivity' : ActorMethod<
     [string, string, string, string, bigint, string],
-    undefined
+    bigint
   >,
   'addUser' : ActorMethod<[string, string], undefined>,
-  'deleteActivity' : ActorMethod<[bigint], undefined>,
-  'getActivitiesForDateRange' : ActorMethod<
-    [Array<string>],
-    Array<[Array<bigint>, string]>
-  >,
+  'deleteActivity' : ActorMethod<[bigint], boolean>,
   'getActivitiesForDay' : ActorMethod<[string], Array<Activity>>,
   'getUsers' : ActorMethod<[], Array<[string, string]>>,
-  'joinActivity' : ActorMethod<[bigint, string], undefined>,
+  'joinActivity' : ActorMethod<[bigint, string], bigint>,
   'login' : ActorMethod<[string], [string, Role]>,
-  'purgeOldActivities' : ActorMethod<[string], undefined>,
+  'purgeOldActivities' : ActorMethod<[string], boolean>,
   'removeUser' : ActorMethod<[string], undefined>,
-  'updateActivityTime' : ActorMethod<[bigint, string], undefined>,
+  'updateActivityTime' : ActorMethod<[bigint, string], boolean>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

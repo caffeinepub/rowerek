@@ -20,29 +20,25 @@ export const Activity = IDL.Record({
 export const Role = IDL.Variant({ 'admin' : IDL.Null, 'user' : IDL.Null });
 
 export const idlService = IDL.Service({
+  '_isAdmin' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
   'addActivity' : IDL.Func(
       [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Nat, IDL.Text],
-      [],
+      [IDL.Nat],
       [],
     ),
   'addUser' : IDL.Func([IDL.Text, IDL.Text], [], []),
-  'deleteActivity' : IDL.Func([IDL.Nat], [], []),
-  'getActivitiesForDateRange' : IDL.Func(
-      [IDL.Vec(IDL.Text)],
-      [IDL.Vec(IDL.Tuple(IDL.Vec(IDL.Nat), IDL.Text))],
-      ['query'],
-    ),
+  'deleteActivity' : IDL.Func([IDL.Nat], [IDL.Bool], []),
   'getActivitiesForDay' : IDL.Func([IDL.Text], [IDL.Vec(Activity)], ['query']),
   'getUsers' : IDL.Func(
       [],
       [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text))],
       ['query'],
     ),
-  'joinActivity' : IDL.Func([IDL.Nat, IDL.Text], [], []),
+  'joinActivity' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Nat], []),
   'login' : IDL.Func([IDL.Text], [IDL.Text, Role], []),
-  'purgeOldActivities' : IDL.Func([IDL.Text], [], []),
+  'purgeOldActivities' : IDL.Func([IDL.Text], [IDL.Bool], []),
   'removeUser' : IDL.Func([IDL.Text], [], []),
-  'updateActivityTime' : IDL.Func([IDL.Nat, IDL.Text], [], []),
+  'updateActivityTime' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Bool], []),
 });
 
 export const idlInitArgs = [];
@@ -60,18 +56,14 @@ export const idlFactory = ({ IDL }) => {
   const Role = IDL.Variant({ 'admin' : IDL.Null, 'user' : IDL.Null });
   
   return IDL.Service({
+    '_isAdmin' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
     'addActivity' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Nat, IDL.Text],
-        [],
+        [IDL.Nat],
         [],
       ),
     'addUser' : IDL.Func([IDL.Text, IDL.Text], [], []),
-    'deleteActivity' : IDL.Func([IDL.Nat], [], []),
-    'getActivitiesForDateRange' : IDL.Func(
-        [IDL.Vec(IDL.Text)],
-        [IDL.Vec(IDL.Tuple(IDL.Vec(IDL.Nat), IDL.Text))],
-        ['query'],
-      ),
+    'deleteActivity' : IDL.Func([IDL.Nat], [IDL.Bool], []),
     'getActivitiesForDay' : IDL.Func(
         [IDL.Text],
         [IDL.Vec(Activity)],
@@ -82,11 +74,11 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text))],
         ['query'],
       ),
-    'joinActivity' : IDL.Func([IDL.Nat, IDL.Text], [], []),
+    'joinActivity' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Nat], []),
     'login' : IDL.Func([IDL.Text], [IDL.Text, Role], []),
-    'purgeOldActivities' : IDL.Func([IDL.Text], [], []),
+    'purgeOldActivities' : IDL.Func([IDL.Text], [IDL.Bool], []),
     'removeUser' : IDL.Func([IDL.Text], [], []),
-    'updateActivityTime' : IDL.Func([IDL.Nat, IDL.Text], [], []),
+    'updateActivityTime' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Bool], []),
   });
 };
 

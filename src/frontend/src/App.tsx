@@ -17,7 +17,16 @@ export interface UserSession {
 function App() {
   const { actor, isFetching } = useActor();
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
-  const [activities, setActivities] = useState<Record<string, Activity[]>>({});
+  const [activities, setActivities] = useState<Record<string, Activity[]>>(
+    () => {
+      try {
+        const cached = localStorage.getItem("rowerek_activities_cache");
+        return cached ? JSON.parse(cached) : {};
+      } catch {
+        return {};
+      }
+    },
+  );
   const [loading, setLoading] = useState(true);
   const [loginOpen, setLoginOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
@@ -48,7 +57,18 @@ function App() {
       if (!actor) return;
       try {
         const dayActivities = await actor.getActivitiesForDay(dateKey);
-        setActivities((prev) => ({ ...prev, [dateKey]: dayActivities }));
+        setActivities((prev) => {
+          const updated = { ...prev, [dateKey]: dayActivities };
+          try {
+            localStorage.setItem(
+              "rowerek_activities_cache",
+              JSON.stringify(updated),
+            );
+          } catch {
+            /* ignore */
+          }
+          return updated;
+        });
       } catch {
         toast.error("Błąd odświeżania dnia");
       }
@@ -72,6 +92,11 @@ function App() {
         map[dk] = results[i] as Activity[];
       });
       setActivities(map);
+      try {
+        localStorage.setItem("rowerek_activities_cache", JSON.stringify(map));
+      } catch {
+        /* ignore */
+      }
     } catch {
       toast.error("Błąd ładowania danych");
     } finally {
@@ -98,6 +123,12 @@ function App() {
     );
     const ms = midnight.getTime() - now.getTime();
     const timer = setTimeout(() => {
+      // Clear cache for the day that just ended before reloading
+      try {
+        localStorage.removeItem("rowerek_activities_cache");
+      } catch {
+        /* ignore */
+      }
       window.location.reload();
     }, ms);
     return () => clearTimeout(timer);
@@ -106,12 +137,12 @@ function App() {
   const handleLogin = (username: string, role: Role) => {
     setCurrentUser({ username, role });
     setLoginOpen(false);
-    toast.success(`Zalogowano jako ${username}`, { duration: 1500 });
+    toast.success(`Zalogowano jako ${username}`, { duration: 800 });
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
-    toast.success("Wylogowano");
+    toast.success("Wylogowano", { duration: 1000 });
   };
 
   return (

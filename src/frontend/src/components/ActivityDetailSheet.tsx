@@ -28,6 +28,15 @@ interface ActivityDetailSheetProps {
   onSuccess: () => Promise<void>;
 }
 
+function formatDuration(halfHours: number): string {
+  if (halfHours === 0) return "";
+  const h = Math.floor(halfHours / 2);
+  const half = halfHours % 2 === 1;
+  if (h > 0 && half) return `${h}h 30min`;
+  if (h > 0) return `${h}h`;
+  return "30 min";
+}
+
 export default function ActivityDetailSheet({
   activity,
   isOwn,
@@ -43,11 +52,24 @@ export default function ActivityDetailSheet({
   const [joining, setJoining] = useState(false);
 
   const color = getUsernameColor(activity.username);
-  const dur = Number(activity.durationHours);
-  const durLabel = dur === 0 ? "czas nieograniczony" : `${dur}h`;
+  const durHalfHours = Number(activity.durationHours);
+  const durLabel = formatDuration(durHalfHours);
 
   const handleSave = async () => {
     if (!actor) return;
+
+    // Check for duplicate time (exclude current activity)
+    const duplicate = allDayActivities.some(
+      (a) =>
+        a.id !== activity.id &&
+        a.username === activity.username &&
+        a.startTime === newTime,
+    );
+    if (duplicate) {
+      toast.error(`Masz już aktywność o godzinie ${newTime} w tym dniu`);
+      return;
+    }
+
     setSaving(true);
     try {
       await actor.updateActivityTime(activity.id, newTime);
@@ -83,6 +105,18 @@ export default function ActivityDetailSheet({
       toast.error("Osiągnąłeś limit 3 aktywności na ten dzień");
       return;
     }
+    // Check for duplicate time
+    const duplicate = allDayActivities.some(
+      (a) =>
+        a.username === currentUser.username &&
+        a.startTime === activity.startTime,
+    );
+    if (duplicate) {
+      toast.error(
+        `Masz już aktywność o godzinie ${activity.startTime} w tym dniu`,
+      );
+      return;
+    }
     setJoining(true);
     try {
       await actor.joinActivity(activity.id, currentUser.username);
@@ -110,7 +144,8 @@ export default function ActivityDetailSheet({
                 {activity.username}
               </span>
               <span className="text-muted-foreground font-normal text-sm ml-2">
-                {activity.startTime} · {durLabel}
+                {activity.startTime}
+                {durLabel ? ` · ${durLabel}` : ""}
               </span>
             </div>
           </SheetTitle>
@@ -127,11 +162,26 @@ export default function ActivityDetailSheet({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="max-h-60">
-                  {TIME_OPTIONS.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
-                    </SelectItem>
-                  ))}
+                  {TIME_OPTIONS.map((t) => {
+                    const hasDuplicate =
+                      t !== activity.startTime &&
+                      allDayActivities.some(
+                        (a) =>
+                          a.id !== activity.id &&
+                          a.username === activity.username &&
+                          a.startTime === t,
+                      );
+                    return (
+                      <SelectItem
+                        key={t}
+                        value={t}
+                        className={`${hasDuplicate ? "opacity-40" : ""}`}
+                      >
+                        {t}
+                        {hasDuplicate ? " ✗" : ""}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>

@@ -103,22 +103,36 @@ export enum Role {
     user = "user"
 }
 export interface backendInterface {
-    addActivity(dateKey: string, username: string, startTime: string, emoji: string, durationHours: bigint, note: string): Promise<void>;
+    _isAdmin(sessionId: string): Promise<boolean>;
+    addActivity(dateKey: string, username: string, startTime: string, emoji: string, durationHours: bigint, note: string): Promise<bigint>;
     addUser(name: string, pin: string): Promise<void>;
-    deleteActivity(activityId: bigint): Promise<void>;
-    getActivitiesForDateRange(dateKeys: Array<string>): Promise<Array<[Array<bigint>, string]>>;
+    deleteActivity(activityId: bigint): Promise<boolean>;
     getActivitiesForDay(dateKey: string): Promise<Array<Activity>>;
     getUsers(): Promise<Array<[string, string]>>;
-    joinActivity(existingActivityId: bigint, username: string): Promise<void>;
+    joinActivity(existingActivityId: bigint, username: string): Promise<bigint>;
     login(pin: string): Promise<[string, Role]>;
-    purgeOldActivities(todayKey: string): Promise<void>;
+    purgeOldActivities(todayKey: string): Promise<boolean>;
     removeUser(name: string): Promise<void>;
-    updateActivityTime(activityId: bigint, newStartTime: string): Promise<void>;
+    updateActivityTime(activityId: bigint, newStartTime: string): Promise<boolean>;
 }
 import type { Role as _Role } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
-    async addActivity(arg0: string, arg1: string, arg2: string, arg3: string, arg4: bigint, arg5: string): Promise<void> {
+    async _isAdmin(arg0: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor._isAdmin(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor._isAdmin(arg0);
+            return result;
+        }
+    }
+    async addActivity(arg0: string, arg1: string, arg2: string, arg3: string, arg4: bigint, arg5: string): Promise<bigint> {
         if (this.processError) {
             try {
                 const result = await this.actor.addActivity(arg0, arg1, arg2, arg3, arg4, arg5);
@@ -146,7 +160,7 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async deleteActivity(arg0: bigint): Promise<void> {
+    async deleteActivity(arg0: bigint): Promise<boolean> {
         if (this.processError) {
             try {
                 const result = await this.actor.deleteActivity(arg0);
@@ -157,20 +171,6 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.deleteActivity(arg0);
-            return result;
-        }
-    }
-    async getActivitiesForDateRange(arg0: Array<string>): Promise<Array<[Array<bigint>, string]>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getActivitiesForDateRange(arg0);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getActivitiesForDateRange(arg0);
             return result;
         }
     }
@@ -202,7 +202,7 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async joinActivity(arg0: bigint, arg1: string): Promise<void> {
+    async joinActivity(arg0: bigint, arg1: string): Promise<bigint> {
         if (this.processError) {
             try {
                 const result = await this.actor.joinActivity(arg0, arg1);
@@ -236,7 +236,7 @@ export class Backend implements backendInterface {
             ];
         }
     }
-    async purgeOldActivities(arg0: string): Promise<void> {
+    async purgeOldActivities(arg0: string): Promise<boolean> {
         if (this.processError) {
             try {
                 const result = await this.actor.purgeOldActivities(arg0);
@@ -264,7 +264,7 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async updateActivityTime(arg0: bigint, arg1: string): Promise<void> {
+    async updateActivityTime(arg0: bigint, arg1: string): Promise<boolean> {
         if (this.processError) {
             try {
                 const result = await this.actor.updateActivityTime(arg0, arg1);

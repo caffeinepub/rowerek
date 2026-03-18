@@ -1,18 +1,16 @@
-import Map "mo:core/Map";
 import Text "mo:core/Text";
 import Nat "mo:core/Nat";
-import Runtime "mo:core/Runtime";
 import Array "mo:core/Array";
+import Map "mo:core/Map";
+import Runtime "mo:core/Runtime";
+
+import Iter "mo:core/Iter";
+
 
 actor {
   type Role = {
     #user;
     #admin;
-  };
-
-  type User = {
-    name : Text;
-    pin : Text;
   };
 
   type Activity = {
@@ -21,68 +19,84 @@ actor {
     username : Text;
     startTime : Text;
     emoji : Text;
-    durationHours : Nat;
+    durationHours : Nat; // 0 = unlimited
     note : Text;
   };
 
-  let users = Map.empty<Text, User>();
-  let activities = Map.empty<Text, Map.Map<Nat, Activity>>();
   var nextActivityId = 0;
+  let users = Map.empty<Text, Text>(); // username -> pin
+  let activityDays = Map.empty<Text, Map.Map<Nat, Activity>>();
+  let isLoggedIn = Map.empty<Text, Role>(); // sessionId -> Role (admin/user)
 
   // AUTH
-  public shared func login(pin : Text) : async (Text, Role) {
-    if (pin == "6464") { return ("admin", #admin) };
-
-    for ((_, user) in users.entries()) {
-      if (user.pin == pin) {
-        return (user.name, #user);
-      };
+  public shared ({ caller }) func login(pin : Text) : async (Text, Role) {
+    if (pin == "6464") {
+      return ("admin", #admin);
     };
-    Runtime.trap("Wrong PIN");
+
+    switch (users.keys().find(func(user) { pin == getPin(user) })) {
+      case (?username) { (username, #user) };
+      case (null) { Runtime.trap("Wrong PIN") };
+    };
   };
 
-  // USER MGMT
-  public shared func addUser(name : Text, pin : Text) : async () {
+  func getPin(user : Text) : Text {
+    switch (users.get(user)) {
+      case (?pin) { pin };
+      case (null) { "" };
+    };
+  };
+
+  public query ({ caller }) func _isAdmin(sessionId : Text) : async Bool {
+    switch (isLoggedIn.get(sessionId)) {
+      case (?role) { role == #admin };
+      case (null) { false };
+    };
+  };
+
+  // USER MANAGEMENT
+  public shared ({ caller }) func addUser(name : Text, pin : Text) : async () {
     if (pin.size() != 4) {
       Runtime.trap("PIN must be 4 digits");
     };
-    let newUser : User = { name; pin };
-    users.add(name, newUser);
+    if (users.containsKey(name)) {
+      Runtime.trap("User already exists");
+    };
+    users.add(name, pin);
   };
 
-  public shared func removeUser(name : Text) : async () {
+  public shared ({ caller }) func removeUser(name : Text) : async () {
     if (not users.containsKey(name)) {
       Runtime.trap("User does not exist");
     };
     users.remove(name);
   };
 
-  public query func getUsers() : async [(Text, Text)] {
-    users.entries().toArray().map(func((name, user)) { (name, user.pin) });
+  public query ({ caller }) func getUsers() : async [(Text, Text)] {
+    users.toArray();
   };
 
-  // ACTIVITIES
-  public shared func addActivity(dateKey : Text, username : Text, startTime : Text, emoji : Text, durationHours : Nat, note : Text) : async () {
-    if (note.size() > 80) {
-      Runtime.trap("Note too long");
-    };
-
-    let dayActivities = switch (activities.get(dateKey)) {
-      case (null) { Map.empty<Nat, Activity>() };
-      case (?existing) { existing };
-    };
-
-    var userActivitiesCount = 0;
-    for ((_, act) in dayActivities.entries()) {
-      if (act.username == username) {
-        userActivitiesCount += 1;
+  // ACTIVITY / CALENDAR FUNC
+  func countDailyUserActivities(dateKey : Text, username : Text) : Nat {
+    switch (activityDays.get(dateKey)) {
+      case (?dayActivities) {
+        dayActivities.values().foldLeft(
+          0,
+          func(count, activity) { if (activity.username == username) { count + 1 } else { count } },
+        );
       };
+      case (null) { 0 };
     };
-    if (userActivitiesCount >= 3) {
+  };
+
+  public shared ({ caller }) func addActivity(dateKey : Text, username : Text, startTime : Text, emoji : Text, durationHours : Nat, note : Text) : async Nat {
+    if (note.size() > 160) { Runtime.trap("Note too long") };
+
+    if (countDailyUserActivities(dateKey, username) >= 3) {
       Runtime.trap("Max 3 activities per user per day");
     };
 
-    let newActivity : Activity = {
+    let activity : Activity = {
       id = nextActivityId;
       dateKey;
       username;
@@ -92,80 +106,74 @@ actor {
       note;
     };
 
-    dayActivities.add(nextActivityId, newActivity);
-    activities.add(dateKey, dayActivities);
+    let dayActivities = switch (activityDays.get(dateKey)) {
+      case (null) { Map.empty<Nat, Activity>() };
+      case (?existing) { existing };
+    };
+
+    dayActivities.add(nextActivityId, activity);
+    activityDays.add(dateKey, dayActivities);
+
     nextActivityId += 1;
+    activity.id;
   };
 
-  public shared func updateActivityTime(activityId : Nat, newStartTime : Text) : async () {
-    for ((_, dayActs) in activities.entries()) {
+  public shared ({ caller }) func updateActivityTime(activityId : Nat, newStartTime : Text) : async Bool {
+    for ((_, dayActs) in activityDays.entries()) {
       switch (dayActs.get(activityId)) {
         case (null) {};
         case (?activity) {
           let updatedActivity = { activity with startTime = newStartTime };
           dayActs.add(activityId, updatedActivity);
-          return;
+          return true;
         };
       };
     };
     Runtime.trap("Activity not found");
   };
 
-  public shared func deleteActivity(activityId : Nat) : async () {
-    for ((_, dayActs) in activities.entries()) {
+  public shared ({ caller }) func deleteActivity(activityId : Nat) : async Bool {
+    for ((_, dayActs) in activityDays.entries()) {
       if (dayActs.containsKey(activityId)) {
         dayActs.remove(activityId);
-        return;
+        return true;
       };
     };
     Runtime.trap("Activity not found");
   };
 
-  public shared func purgeOldActivities(todayKey : Text) : async () {
-    let oldKeys = activities.keys().filter(func(dateKey) { dateKey < todayKey }).toArray();
+  public shared ({ caller }) func purgeOldActivities(todayKey : Text) : async Bool {
+    let oldKeys = activityDays.keys().filter(func(dateKey) { dateKey < todayKey }).toArray();
     for (dateKey in oldKeys.vals()) {
-      activities.remove(dateKey);
+      activityDays.remove(dateKey);
     };
+    true;
   };
 
-  public query func getActivitiesForDateRange(dateKeys : [Text]) : async [([Nat], Text)] {
-    dateKeys.map(
-      func(dateKey) {
-        switch (activities.get(dateKey)) {
-          case (null) { ([], dateKey) };
-          case (?dayActs) {
-            let sortedActivities = dayActs.entries().toArray().sort(
-              func(entry1, entry2) { Nat.compare(entry1.0, entry2.0) }
-            );
-            let ids = sortedActivities.map(func((id, _)) { id });
-            (ids, dateKey);
-          };
-        };
-      }
-    );
-  };
-
-  public query func getActivitiesForDay(dateKey : Text) : async [Activity] {
-    switch (activities.get(dateKey)) {
+  public query ({ caller }) func getActivitiesForDay(dateKey : Text) : async [Activity] {
+    switch (activityDays.get(dateKey)) {
       case (null) { [] };
       case (?dayActs) { dayActs.values().toArray() };
     };
   };
 
-  public shared func joinActivity(existingActivityId : Nat, username : Text) : async () {
-    for ((_, dayActs) in activities.entries()) {
+  public shared ({ caller }) func joinActivity(existingActivityId : Nat, username : Text) : async Nat {
+    for ((_, dayActs) in activityDays.entries()) {
       switch (dayActs.get(existingActivityId)) {
         case (null) {};
         case (?activity) {
-          await addActivity(
+          if (countDailyUserActivities(activity.dateKey, username) >= 3) {
+            Runtime.trap("Max 3 activities per user per day");
+          };
+
+          return await addActivity(
             activity.dateKey,
             username,
             activity.startTime,
             activity.emoji,
             activity.durationHours,
-            activity.note,
+            ""
           );
-          return;
         };
       };
     };

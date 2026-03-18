@@ -72,7 +72,7 @@ export default function DayRow({
       data-ocid={`calendar.day.item.${index}`}
     >
       <div className="flex items-stretch min-h-[64px]">
-        {/* Day label - LEFT side, fully clickable, weekend highlighted only here */}
+        {/* Day label - LEFT side, clickable */}
         <button
           type="button"
           onClick={handleAddClick}
@@ -98,15 +98,19 @@ export default function DayRow({
           </span>
         </button>
 
-        {/* Activities area - always normal card bg */}
-        <div className="flex-1 p-1.5 pl-1 bg-card">
+        {/* Activities area - clicking empty space opens add panel */}
+        <div
+          className="flex-1 p-1.5 pl-1 bg-card cursor-pointer"
+          onClick={handleAddClick}
+          // biome-ignore lint/a11y/useSemanticElements: cannot use button here due to nested button children
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === "Enter" && handleAddClick()}
+          aria-label="Dodaj aktywność"
+          data-ocid="calendar.day.empty_state"
+        >
           {activities.length === 0 ? (
-            <button
-              type="button"
-              className="h-full min-h-[48px] w-full rounded-md hover:bg-muted/40 active:bg-muted/60 transition-colors"
-              onClick={handleAddClick}
-              data-ocid="calendar.day.empty_state"
-            />
+            <div className="h-full min-h-[48px] w-full rounded-md hover:bg-muted/40 active:bg-muted/60 transition-colors" />
           ) : (
             <div className="grid grid-cols-3 gap-1">
               {activities.map((a, ci) => (
