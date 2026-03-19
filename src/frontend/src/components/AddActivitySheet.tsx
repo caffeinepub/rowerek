@@ -125,6 +125,8 @@ export default function AddActivitySheet({
       <SheetContent
         side="bottom"
         className="rounded-t-2xl pb-10 max-h-[90vh] overflow-y-auto"
+        onInteractOutside={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => e.preventDefault()}
         data-ocid="add_activity.sheet"
       >
         <SheetHeader className="mb-3">

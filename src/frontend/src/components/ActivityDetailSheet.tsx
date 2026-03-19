@@ -19,6 +19,7 @@ import type { Activity, backendInterface } from "../backend";
 import { TIME_OPTIONS, getUsernameColor } from "../utils/helpers";
 
 interface ActivityDetailSheetProps {
+  open: boolean;
   activity: Activity;
   isOwn: boolean;
   currentUser: UserSession;
@@ -38,6 +39,7 @@ function formatDuration(halfHours: number): string {
 }
 
 export default function ActivityDetailSheet({
+  open,
   activity,
   isOwn,
   currentUser,
@@ -130,10 +132,12 @@ export default function ActivityDetailSheet({
   };
 
   return (
-    <Sheet open onOpenChange={(v) => !v && onClose()}>
+    <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent
         side="bottom"
         className="rounded-t-2xl pb-10"
+        onInteractOutside={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => e.preventDefault()}
         data-ocid="activity.popover"
       >
         <SheetHeader className="mb-4">

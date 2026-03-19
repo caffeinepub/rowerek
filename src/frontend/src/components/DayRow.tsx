@@ -30,6 +30,7 @@ export default function DayRow({
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(
     null,
   );
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const dayName = getPolishDayName(dateKey);
   const dayNum = getDayNumber(dateKey);
@@ -64,6 +65,12 @@ export default function DayRow({
       return;
     }
     setSelectedActivity(activity);
+    setDetailOpen(true);
+  };
+
+  const handleDetailClose = () => {
+    setDetailOpen(false);
+    setTimeout(() => setSelectedActivity(null), 350);
   };
 
   return (
@@ -143,16 +150,17 @@ export default function DayRow({
         />
       )}
 
-      {selectedActivity && currentUser && (
+      {currentUser && selectedActivity && (
         <ActivityDetailSheet
+          open={detailOpen}
           activity={selectedActivity}
           isOwn={currentUser.username === selectedActivity.username}
           currentUser={currentUser}
           allDayActivities={activities}
           actor={actor}
-          onClose={() => setSelectedActivity(null)}
+          onClose={handleDetailClose}
           onSuccess={async () => {
-            setSelectedActivity(null);
+            handleDetailClose();
             await onRefresh();
           }}
         />
