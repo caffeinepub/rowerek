@@ -26,7 +26,7 @@ interface AddActivitySheetProps {
   actor: backendInterface | null;
   currentUser: UserSession;
   dayActivities: Activity[];
-  onSuccess: () => Promise<void>;
+  onSuccess: (newActivity: Activity) => void;
 }
 
 const HOUR_OPTIONS = [
@@ -98,7 +98,7 @@ export default function AddActivitySheet({
 
     setSaving(true);
     try {
-      await actor.addActivity(
+      const newId = await actor.addActivity(
         dateKey,
         currentUser.username,
         time,
@@ -107,15 +107,24 @@ export default function AddActivitySheet({
         note,
       );
       toast.success("Dodano aktywność!");
+      const newActivity: Activity = {
+        id: newId,
+        dateKey,
+        username: currentUser.username,
+        startTime: time,
+        emoji,
+        durationHours: BigInt(durationHalfHours),
+        note,
+      };
       setTime("08:00");
       setEmoji("🚴");
       setHours(0);
       setHalfHour(false);
       setNote("");
-      await onSuccess();
+      setSaving(false);
+      onSuccess(newActivity);
     } catch {
       toast.error("Błąd dodawania aktywności");
-    } finally {
       setSaving(false);
     }
   };

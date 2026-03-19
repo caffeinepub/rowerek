@@ -76,6 +76,21 @@ function App() {
     [actor],
   );
 
+  const setDayActivities = useCallback((dk: string, acts: Activity[]) => {
+    setActivities((prev) => {
+      const updated = { ...prev, [dk]: acts };
+      try {
+        localStorage.setItem(
+          "rowerek_activities_cache",
+          JSON.stringify(updated),
+        );
+      } catch {
+        /* ignore */
+      }
+      return updated;
+    });
+  }, []);
+
   const loadAll = useCallback(async () => {
     if (!actor) return;
     setLoading(true);
@@ -161,6 +176,7 @@ function App() {
           currentUser={currentUser}
           actor={actor}
           onDayRefresh={loadDay}
+          onSetDayActivities={setDayActivities}
           onLoginRequired={() => setLoginOpen(true)}
         />
       </main>

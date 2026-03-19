@@ -26,7 +26,7 @@ interface ActivityDetailSheetProps {
   allDayActivities: Activity[];
   actor: backendInterface | null;
   onClose: () => void;
-  onSuccess: () => Promise<void>;
+  onSuccess: (updatedActivities: Activity[]) => void;
 }
 
 function formatDuration(halfHours: number): string {
@@ -76,10 +76,13 @@ export default function ActivityDetailSheet({
     try {
       await actor.updateActivityTime(activity.id, newTime);
       toast.success("Zmieniono godzinę");
-      await onSuccess();
+      const updated = allDayActivities.map((a) =>
+        a.id === activity.id ? { ...a, startTime: newTime } : a,
+      );
+      setSaving(false);
+      onSuccess(updated);
     } catch {
       toast.error("Błąd zapisu");
-    } finally {
       setSaving(false);
     }
   };
@@ -90,10 +93,11 @@ export default function ActivityDetailSheet({
     try {
       await actor.deleteActivity(activity.id);
       toast.success("Usunięto aktywność");
-      await onSuccess();
+      const updated = allDayActivities.filter((a) => a.id !== activity.id);
+      setDeleting(false);
+      onSuccess(updated);
     } catch {
       toast.error("Błąd usuwania");
-    } finally {
       setDeleting(false);
     }
   };
@@ -121,12 +125,22 @@ export default function ActivityDetailSheet({
     }
     setJoining(true);
     try {
-      await actor.joinActivity(activity.id, currentUser.username);
+      const newId = await actor.joinActivity(activity.id, currentUser.username);
       toast.success("Dołączyłeś do aktywności!");
-      await onSuccess();
+      const newActivity: Activity = {
+        id: newId,
+        dateKey: activity.dateKey,
+        username: currentUser.username,
+        startTime: activity.startTime,
+        emoji: activity.emoji,
+        durationHours: activity.durationHours,
+        note: "",
+      };
+      const updated = [...allDayActivities, newActivity];
+      setJoining(false);
+      onSuccess(updated);
     } catch {
       toast.error("Błąd dołączania");
-    } finally {
       setJoining(false);
     }
   };

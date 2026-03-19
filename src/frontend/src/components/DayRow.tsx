@@ -14,6 +14,7 @@ interface DayRowProps {
   currentUser: UserSession | null;
   actor: backendInterface | null;
   onRefresh: () => Promise<void>;
+  onSetDayActivities: (dateKey: string, activities: Activity[]) => void;
   onLoginRequired: () => void;
 }
 
@@ -23,7 +24,7 @@ export default function DayRow({
   activities,
   currentUser,
   actor,
-  onRefresh,
+  onSetDayActivities,
   onLoginRequired,
 }: DayRowProps) {
   const [addOpen, setAddOpen] = useState(false);
@@ -68,9 +69,12 @@ export default function DayRow({
     setDetailOpen(true);
   };
 
-  const handleDetailClose = () => {
+  const handleDetailClose = (afterClose?: () => void) => {
     setDetailOpen(false);
-    setTimeout(() => setSelectedActivity(null), 350);
+    setTimeout(() => {
+      setSelectedActivity(null);
+      afterClose?.();
+    }, 350);
   };
 
   return (
@@ -143,9 +147,9 @@ export default function DayRow({
           actor={actor}
           currentUser={currentUser}
           dayActivities={activities}
-          onSuccess={async () => {
+          onSuccess={(newActivity) => {
             setAddOpen(false);
-            await onRefresh();
+            onSetDayActivities(dateKey, [...activities, newActivity]);
           }}
         />
       )}
@@ -159,9 +163,10 @@ export default function DayRow({
           allDayActivities={activities}
           actor={actor}
           onClose={handleDetailClose}
-          onSuccess={async () => {
-            handleDetailClose();
-            await onRefresh();
+          onSuccess={(updatedActivities) => {
+            handleDetailClose(() => {
+              onSetDayActivities(dateKey, updatedActivities);
+            });
           }}
         />
       )}
