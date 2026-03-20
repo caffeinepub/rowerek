@@ -14,20 +14,26 @@ export interface UserSession {
   role: Role;
 }
 
+function getCachedActivities(): Record<string, Activity[]> {
+  try {
+    const cached = localStorage.getItem("rowerek_activities_cache");
+    return cached ? JSON.parse(cached) : {};
+  } catch {
+    return {};
+  }
+}
+
 function App() {
   const { actor, isFetching } = useActor();
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
-  const [activities, setActivities] = useState<Record<string, Activity[]>>(
-    () => {
-      try {
-        const cached = localStorage.getItem("rowerek_activities_cache");
-        return cached ? JSON.parse(cached) : {};
-      } catch {
-        return {};
-      }
-    },
-  );
-  const [loading, setLoading] = useState(true);
+  const [activities, setActivities] =
+    useState<Record<string, Activity[]>>(getCachedActivities);
+  const cached = useMemo(() => {
+    const c = getCachedActivities();
+    return Object.keys(c).length > 0;
+  }, []);
+  const [loading, setLoading] = useState(!cached);
+  const [refreshing, setRefreshing] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
 
@@ -93,11 +99,15 @@ function App() {
 
   const loadAll = useCallback(async () => {
     if (!actor) return;
-    setLoading(true);
+    const hasCached = Object.keys(getCachedActivities()).length > 0;
+    if (hasCached) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     try {
       const today = formatLocalDate(new Date());
       const dks = getNext14DateKeys();
-      // Parallelize purge and all day fetches simultaneously for faster loading
       const [, ...results] = await Promise.all([
         actor.purgeOldActivities(today),
         ...dks.map((dk) => actor.getActivitiesForDay(dk)),
@@ -116,6 +126,7 @@ function App() {
       toast.error("Błąd ładowania danych");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [actor]);
 
@@ -138,7 +149,6 @@ function App() {
     );
     const ms = midnight.getTime() - now.getTime();
     const timer = setTimeout(() => {
-      // Clear cache for the day that just ended before reloading
       try {
         localStorage.removeItem("rowerek_activities_cache");
       } catch {
@@ -169,6 +179,13 @@ function App() {
         onAdminClick={() => setAdminOpen(true)}
       />
       <main className="max-w-lg mx-auto px-2 pb-10 pt-1">
+        {refreshing && (
+          <div className="flex justify-center py-1">
+            <span className="text-xs text-muted-foreground animate-pulse">
+              odświeżanie...
+            </span>
+          </div>
+        )}
         <CalendarView
           dateKeys={dateKeys}
           activities={activities}
