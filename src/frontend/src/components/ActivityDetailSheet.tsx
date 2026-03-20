@@ -152,6 +152,7 @@ export default function ActivityDetailSheet({
         className="rounded-t-2xl pb-10"
         onInteractOutside={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => e.preventDefault()}
+        onFocusOutside={(e) => e.preventDefault()}
         data-ocid="activity.popover"
       >
         <SheetHeader className="mb-4">

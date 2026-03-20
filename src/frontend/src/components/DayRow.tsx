@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { UserSession } from "../App";
 import type { Activity, backendInterface } from "../backend";
@@ -24,6 +24,7 @@ export default function DayRow({
   activities,
   currentUser,
   actor,
+  onRefresh,
   onSetDayActivities,
   onLoginRequired,
 }: DayRowProps) {
@@ -32,6 +33,12 @@ export default function DayRow({
     null,
   );
   const [detailOpen, setDetailOpen] = useState(false);
+
+  // Keep last activity in a ref so the sheet stays mounted during close animation
+  const lastActivityRef = useRef<Activity | null>(null);
+  if (selectedActivity !== null) {
+    lastActivityRef.current = selectedActivity;
+  }
 
   const dayName = getPolishDayName(dateKey);
   const dayNum = getDayNumber(dateKey);
@@ -69,12 +76,15 @@ export default function DayRow({
     setDetailOpen(true);
   };
 
+  // Don't clear selectedActivity immediately - let the animation finish.
+  // The ref keeps the last activity alive for the sheet during animation.
   const handleDetailClose = (afterClose?: () => void) => {
+    afterClose?.();
     setDetailOpen(false);
+    // Delay clearing selectedActivity so sheet can animate out without unmounting
     setTimeout(() => {
       setSelectedActivity(null);
-      afterClose?.();
-    }, 350);
+    }, 400);
   };
 
   return (
@@ -139,7 +149,8 @@ export default function DayRow({
         </div>
       </div>
 
-      {currentUser && addOpen && (
+      {/* Always render when user is logged in - open prop controls animation, not mounting */}
+      {currentUser && (
         <AddActivitySheet
           open={addOpen}
           onClose={() => setAddOpen(false)}
@@ -150,15 +161,17 @@ export default function DayRow({
           onSuccess={(newActivity) => {
             setAddOpen(false);
             onSetDayActivities(dateKey, [...activities, newActivity]);
+            onRefresh().catch(() => {});
           }}
         />
       )}
 
-      {currentUser && selectedActivity && (
+      {/* Use lastActivityRef.current so component stays mounted during close animation */}
+      {currentUser && lastActivityRef.current && (
         <ActivityDetailSheet
           open={detailOpen}
-          activity={selectedActivity}
-          isOwn={currentUser.username === selectedActivity.username}
+          activity={lastActivityRef.current}
+          isOwn={currentUser.username === lastActivityRef.current.username}
           currentUser={currentUser}
           allDayActivities={activities}
           actor={actor}
@@ -166,6 +179,7 @@ export default function DayRow({
           onSuccess={(updatedActivities) => {
             handleDetailClose(() => {
               onSetDayActivities(dateKey, updatedActivities);
+              onRefresh().catch(() => {});
             });
           }}
         />
