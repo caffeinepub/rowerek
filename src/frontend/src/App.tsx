@@ -159,6 +159,31 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Update app badge with user's total activity count
+  useEffect(() => {
+    if (!("setAppBadge" in navigator)) return;
+    if (!currentUser) {
+      (navigator as Navigator & { clearAppBadge: () => Promise<void> })
+        .clearAppBadge?.()
+        .catch(() => {});
+      return;
+    }
+    const total = Object.values(activities).reduce((sum, dayActs) => {
+      return (
+        sum + dayActs.filter((a) => a.username === currentUser.username).length
+      );
+    }, 0);
+    if (total > 0) {
+      (navigator as Navigator & { setAppBadge: (n: number) => Promise<void> })
+        .setAppBadge(total)
+        .catch(() => {});
+    } else {
+      (navigator as Navigator & { clearAppBadge: () => Promise<void> })
+        .clearAppBadge?.()
+        .catch(() => {});
+    }
+  }, [activities, currentUser]);
+
   const handleLogin = (username: string, role: Role) => {
     setCurrentUser({ username, role });
     setLoginOpen(false);
