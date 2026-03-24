@@ -15,21 +15,28 @@ export interface Activity {
   'startTime' : string,
   'dateKey' : string,
   'username' : string,
-  'note' : string,
   'durationHours' : bigint,
   'emoji' : string,
+}
+export interface Message {
+  'id' : bigint,
+  'threadId' : string,
+  'author' : string,
+  'text' : string,
+  'timestamp' : bigint,
 }
 export type Role = { 'admin' : null } |
   { 'user' : null };
 export interface _SERVICE {
-  '_isAdmin' : ActorMethod<[string], boolean>,
   'addActivity' : ActorMethod<
-    [string, string, string, string, bigint, string],
+    [string, string, string, string, bigint],
     bigint
   >,
+  'addMessage' : ActorMethod<[string, string, string], bigint>,
   'addUser' : ActorMethod<[string, string], undefined>,
   'deleteActivity' : ActorMethod<[bigint], boolean>,
   'getActivitiesForDay' : ActorMethod<[string], Array<Activity>>,
+  'getMessages' : ActorMethod<[string], Array<Message>>,
   'getUsers' : ActorMethod<[], Array<[string, string]>>,
   'joinActivity' : ActorMethod<[bigint, string], bigint>,
   'login' : ActorMethod<[string], [string, Role]>,

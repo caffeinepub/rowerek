@@ -16,6 +16,7 @@ export const Activity = IDL.Record({
   'durationHours' : IDL.Nat,
   'emoji' : IDL.Text,
 });
+
 export const Message = IDL.Record({
   'id' : IDL.Nat,
   'threadId' : IDL.Text,
@@ -23,6 +24,7 @@ export const Message = IDL.Record({
   'text' : IDL.Text,
   'timestamp' : IDL.Int,
 });
+
 export const Role = IDL.Variant({ 'admin' : IDL.Null, 'user' : IDL.Null });
 
 export const idlService = IDL.Service({

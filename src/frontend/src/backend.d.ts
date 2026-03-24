@@ -12,19 +12,27 @@ export interface Activity {
     startTime: string;
     dateKey: string;
     username: string;
-    note: string;
     durationHours: bigint;
     emoji: string;
+}
+export interface Message {
+    id: bigint;
+    threadId: string;
+    author: string;
+    text: string;
+    timestamp: bigint;
 }
 export enum Role {
     admin = "admin",
     user = "user"
 }
 export interface backendInterface {
-    addActivity(dateKey: string, username: string, startTime: string, emoji: string, durationHours: bigint, note: string): Promise<bigint>;
+    addActivity(dateKey: string, username: string, startTime: string, emoji: string, durationHours: bigint): Promise<bigint>;
+    addMessage(threadId: string, author: string, text: string): Promise<bigint>;
     addUser(name: string, pin: string): Promise<void>;
     deleteActivity(activityId: bigint): Promise<boolean>;
     getActivitiesForDay(dateKey: string): Promise<Array<Activity>>;
+    getMessages(threadId: string): Promise<Array<Message>>;
     getUsers(): Promise<Array<[string, string]>>;
     joinActivity(existingActivityId: bigint, username: string): Promise<bigint>;
     login(pin: string): Promise<[string, Role]>;

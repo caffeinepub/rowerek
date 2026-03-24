@@ -94,9 +94,15 @@ export interface Activity {
     startTime: string;
     dateKey: string;
     username: string;
-    note: string;
     durationHours: bigint;
     emoji: string;
+}
+export interface Message {
+    id: bigint;
+    threadId: string;
+    author: string;
+    text: string;
+    timestamp: bigint;
 }
 export enum Role {
     admin = "admin",
@@ -104,7 +110,9 @@ export enum Role {
 }
 export interface backendInterface {
     _isAdmin(sessionId: string): Promise<boolean>;
-    addActivity(dateKey: string, username: string, startTime: string, emoji: string, durationHours: bigint, note: string): Promise<bigint>;
+    addActivity(dateKey: string, username: string, startTime: string, emoji: string, durationHours: bigint): Promise<bigint>;
+    addMessage(threadId: string, author: string, text: string): Promise<bigint>;
+    getMessages(threadId: string): Promise<Array<Message>>;
     addUser(name: string, pin: string): Promise<void>;
     deleteActivity(activityId: bigint): Promise<boolean>;
     getActivitiesForDay(dateKey: string): Promise<Array<Activity>>;
@@ -132,17 +140,45 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async addActivity(arg0: string, arg1: string, arg2: string, arg3: string, arg4: bigint, arg5: string): Promise<bigint> {
+    async addActivity(arg0: string, arg1: string, arg2: string, arg3: string, arg4: bigint): Promise<bigint> {
         if (this.processError) {
             try {
-                const result = await this.actor.addActivity(arg0, arg1, arg2, arg3, arg4, arg5);
+                const result = await this.actor.addActivity(arg0, arg1, arg2, arg3, arg4);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.addActivity(arg0, arg1, arg2, arg3, arg4, arg5);
+            const result = await this.actor.addActivity(arg0, arg1, arg2, arg3, arg4);
+            return result;
+        }
+    }
+    async addMessage(arg0: string, arg1: string, arg2: string): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addMessage(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addMessage(arg0, arg1, arg2);
+            return result;
+        }
+    }
+    async getMessages(arg0: string): Promise<Array<Message>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getMessages(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getMessages(arg0);
             return result;
         }
     }

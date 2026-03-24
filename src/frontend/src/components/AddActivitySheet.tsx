@@ -47,9 +47,7 @@ export default function AddActivitySheet({
 }: AddActivitySheetProps) {
   const [time, setTime] = useState("08:00");
   const [emoji, setEmoji] = useState("🚴");
-  // hours: 0 = none selected, 1-4 = selected hours
   const [hours, setHours] = useState(0);
-  // halfHour: independent toggle for +30min
   const [halfHour, setHalfHour] = useState(false);
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
@@ -78,14 +76,9 @@ export default function AddActivitySheet({
     }
   };
 
-  const handleTimeChange = (newTime: string) => {
-    setTime(newTime);
-  };
-
   const handleSubmit = async () => {
     if (!actor) return;
 
-    // Check for duplicate time
     const duplicate = dayActivities.some(
       (a) => a.username === currentUser.username && a.startTime === time,
     );
@@ -104,8 +97,18 @@ export default function AddActivitySheet({
         time,
         emoji,
         BigInt(durationHalfHours),
-        note,
       );
+
+      // If note provided, post it as first message in thread
+      if (note.trim()) {
+        const threadId = `${dateKey}|${emoji}|${time}`;
+        try {
+          await actor.addMessage(threadId, currentUser.username, note.trim());
+        } catch {
+          // non-fatal: activity was created, message failed
+        }
+      }
+
       toast.success("Dodano aktywność!");
       const newActivity: Activity = {
         id: newId,
@@ -114,7 +117,6 @@ export default function AddActivitySheet({
         startTime: time,
         emoji,
         durationHours: BigInt(durationHalfHours),
-        note,
       };
       setTime("08:00");
       setEmoji("🚴");
@@ -123,8 +125,10 @@ export default function AddActivitySheet({
       setNote("");
       setSaving(false);
       onSuccess(newActivity);
-    } catch {
-      toast.error("Błąd dodawania aktywności");
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Błąd dodawania aktywności";
+      toast.error(msg);
       setSaving(false);
     }
   };
@@ -151,7 +155,7 @@ export default function AddActivitySheet({
             <div className="text-sm font-medium text-foreground">
               Godzina rozpoczęcia
             </div>
-            <Select value={time} onValueChange={handleTimeChange}>
+            <Select value={time} onValueChange={setTime}>
               <SelectTrigger
                 className="h-14 text-base font-semibold text-foreground dark:text-foreground"
                 data-ocid="add_activity.time_select"
@@ -218,7 +222,7 @@ export default function AddActivitySheet({
             </div>
           </div>
 
-          {/* Duration: hour buttons + 1/2h toggle */}
+          {/* Duration */}
           <div className="flex flex-col gap-1.5">
             <div className="text-sm font-medium text-foreground">
               Czas trwania
@@ -239,7 +243,6 @@ export default function AddActivitySheet({
                   {opt.label}
                 </button>
               ))}
-              {/* 1/2h toggle - independent */}
               <button
                 type="button"
                 onClick={() => setHalfHour(!halfHour)}
@@ -265,11 +268,11 @@ export default function AddActivitySheet({
             )}
           </div>
 
-          {/* Note */}
+          {/* Initial message / note */}
           <div className="flex flex-col gap-1.5">
             <div className="flex justify-between">
               <div className="text-sm font-medium text-foreground">
-                Notatka (opcjonalnie)
+                Wiadomość (opcjonalnie)
               </div>
               <span
                 className={`text-xs ${
@@ -284,7 +287,7 @@ export default function AddActivitySheet({
             <Textarea
               value={note}
               onChange={(e) => setNote(e.target.value.slice(0, 160))}
-              placeholder="Krótka wiadomość..."
+              placeholder="Napisz wiadomość do wątku..."
               className="resize-none h-16 text-sm dark:text-foreground dark:placeholder:text-muted-foreground"
               maxLength={160}
               data-ocid="add_activity.textarea"
