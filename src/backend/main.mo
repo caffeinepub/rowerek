@@ -36,7 +36,7 @@ persistent actor {
     timestamp : Int;
   };
 
-  // These let-bindings must stay to satisfy upgrade compatibility
+  // Old let-bindings kept to satisfy upgrade compatibility
   // (persistent actor treats all let-bindings as stable)
   let users : Map.Map<Text, Text> = Map.empty<Text, Text>();
   let activityDays : Map.Map<Text, Map.Map<Nat, OldActivity>> =
@@ -44,7 +44,7 @@ persistent actor {
   let isLoggedIn : Map.Map<Text, Role> = Map.empty<Text, Role>();
   stable var nextActivityId : Nat = 0;
 
-  // New stable vars (flat arrays -- these are the ones actually used)
+  // Active stable vars (flat arrays)
   stable var _users : [UserRecord] = [];
   stable var _activities : [Activity] = [];
   stable var _messages : [Message] = [];

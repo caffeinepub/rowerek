@@ -1,5 +1,5 @@
 import { Toaster } from "@/components/ui/sonner";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { Activity, Role } from "./backend";
 import AdminPanel from "./components/AdminPanel";
@@ -14,6 +14,11 @@ export interface UserSession {
   role: Role;
 }
 
+type NavType = Navigator & {
+  setAppBadge?: (n?: number) => Promise<void>;
+  clearAppBadge?: () => Promise<void>;
+};
+
 function getCachedActivities(): Record<string, Activity[]> {
   try {
     const cached = localStorage.getItem("rowerek_activities_cache");
@@ -21,6 +26,36 @@ function getCachedActivities(): Record<string, Activity[]> {
   } catch {
     return {};
   }
+}
+
+function getBadgeSnapshot(): number {
+  try {
+    return (
+      Number.parseInt(
+        localStorage.getItem("rowerek_badge_snapshot") ?? "0",
+        10,
+      ) || 0
+    );
+  } catch {
+    return 0;
+  }
+}
+
+function setBadgeSnapshot(count: number) {
+  try {
+    localStorage.setItem("rowerek_badge_snapshot", String(count));
+  } catch {
+    /* ignore */
+  }
+}
+
+function countOtherUsersActivities(
+  activitiesMap: Record<string, Activity[]>,
+  myUsername?: string,
+): number {
+  return Object.values(activitiesMap).reduce((sum, dayActs) => {
+    return sum + dayActs.filter((a) => a.username !== myUsername).length;
+  }, 0);
 }
 
 function App() {
@@ -36,6 +71,16 @@ function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+
+  // Keep ref to current activities + user for event handlers
+  const activitiesRef = useRef(activities);
+  const currentUserRef = useRef(currentUser);
+  useEffect(() => {
+    activitiesRef.current = activities;
+  }, [activities]);
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
 
   const dateKeys = useMemo(() => getNext14DateKeys(), []);
 
@@ -122,6 +167,19 @@ function App() {
       } catch {
         /* ignore */
       }
+
+      // App Badging: compare other-users' activity count to stored snapshot
+      if ("setAppBadge" in navigator) {
+        const myUsername = currentUserRef.current?.username;
+        const currentCount = countOtherUsersActivities(map, myUsername);
+        const snapshot = getBadgeSnapshot();
+        if (currentCount > snapshot) {
+          const newCount = currentCount - snapshot;
+          (navigator as NavType).setAppBadge?.(newCount).catch(() => {});
+        }
+        // Always update snapshot to current count so next load compares correctly
+        setBadgeSnapshot(currentCount);
+      }
     } catch {
       toast.error("Błąd ładowania danych");
     } finally {
@@ -135,6 +193,34 @@ function App() {
       loadAll();
     }
   }, [actor, isFetching, loadAll]);
+
+  // Clear badge when user focuses/visits the app
+  useEffect(() => {
+    const clearBadge = () => {
+      if ("clearAppBadge" in navigator) {
+        (navigator as NavType).clearAppBadge?.().catch(() => {});
+      }
+      // Update snapshot to current other-users count so no false badge on next load
+      const myUsername = currentUserRef.current?.username;
+      const currentCount = countOtherUsersActivities(
+        activitiesRef.current,
+        myUsername,
+      );
+      setBadgeSnapshot(currentCount);
+    };
+
+    const handleFocus = () => clearBadge();
+    const handleVisibility = () => {
+      if (!document.hidden) clearBadge();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, []);
 
   // Midnight page reload
   useEffect(() => {
@@ -159,35 +245,19 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Update app badge with user's total activity count
-  useEffect(() => {
-    if (!("setAppBadge" in navigator)) return;
-    if (!currentUser) {
-      (navigator as Navigator & { clearAppBadge: () => Promise<void> })
-        .clearAppBadge?.()
-        .catch(() => {});
-      return;
-    }
-    const total = Object.values(activities).reduce((sum, dayActs) => {
-      return (
-        sum + dayActs.filter((a) => a.username === currentUser.username).length
-      );
-    }, 0);
-    if (total > 0) {
-      (navigator as Navigator & { setAppBadge: (n: number) => Promise<void> })
-        .setAppBadge(total)
-        .catch(() => {});
-    } else {
-      (navigator as Navigator & { clearAppBadge: () => Promise<void> })
-        .clearAppBadge?.()
-        .catch(() => {});
-    }
-  }, [activities, currentUser]);
-
   const handleLogin = (username: string, role: Role) => {
     setCurrentUser({ username, role });
     setLoginOpen(false);
     toast.success(`Zalogowano jako ${username}`, { duration: 800 });
+    // Clear badge on login — user is now looking at the app
+    if ("clearAppBadge" in navigator) {
+      (navigator as NavType).clearAppBadge?.().catch(() => {});
+    }
+    const currentCount = countOtherUsersActivities(
+      activitiesRef.current,
+      username,
+    );
+    setBadgeSnapshot(currentCount);
   };
 
   const handleLogout = () => {

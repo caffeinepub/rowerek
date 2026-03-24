@@ -8,16 +8,21 @@
     <meta name="apple-mobile-web-app-title" content="Rowerek" />
     <meta name="description" content="Planuj wspólne wycieczki rowerowe" />
     <link rel="manifest" href="/manifest.json" />
-    <link rel="apple-touch-icon" href="/assets/generated/rowerek-icon.dim_512x512.png" />
+    <link rel="apple-touch-icon" href="/assets/generated/rowerek-icon-512.dim_512x512.png" />
     <title>Rowerek</title>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
+      // Service Worker registration (cache version: v3)
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js');
+          navigator.serviceWorker.register('/sw.js').then(function(reg) {
+            console.log('SW registered:', reg.scope);
+          }).catch(function(err) {
+            console.log('SW registration failed:', err);
+          });
         });
       }
     </script>
