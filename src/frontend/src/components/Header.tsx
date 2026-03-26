@@ -49,7 +49,10 @@ export default function Header({
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 bg-background/98 backdrop-blur border-b border-border shadow-sm">
+    <header
+      className="sticky top-0 z-40 bg-background/98 backdrop-blur border-b border-border shadow-sm"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
+    >
       <div className="max-w-lg mx-auto px-3 h-12 flex items-center justify-between">
         <span className="text-lg font-display font-bold text-foreground tracking-tight">
           🚴 Rowerek
