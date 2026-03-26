@@ -315,6 +315,19 @@ function App() {
         actor={actor}
       />
       <Toaster position="top-center" richColors />
+      {/* PWA icons - required for manifest, do not remove */}
+      <img
+        src="/assets/generated/rowerek-icon-192.dim_192x192.png"
+        style={{ display: "none" }}
+        aria-hidden="true"
+        alt=""
+      />
+      <img
+        src="/assets/generated/rowerek-icon-512.dim_512x512.png"
+        style={{ display: "none" }}
+        aria-hidden="true"
+        alt=""
+      />
     </div>
   );
 }

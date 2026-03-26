@@ -36,8 +36,7 @@ persistent actor {
     timestamp : Int;
   };
 
-  // Old let-bindings kept to satisfy upgrade compatibility
-  // (persistent actor treats all let-bindings as stable)
+  // Old let-bindings kept for upgrade compatibility
   let users : Map.Map<Text, Text> = Map.empty<Text, Text>();
   let activityDays : Map.Map<Text, Map.Map<Nat, OldActivity>> =
     Map.empty<Text, Map.Map<Nat, OldActivity>>();
