@@ -5,8 +5,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogIn, LogOut, Moon, Settings, Sun, User } from "lucide-react";
-import { useEffect, useState } from "react";
+import { LogIn, LogOut, Settings, User } from "lucide-react";
+import { useEffect } from "react";
 import type { UserSession } from "../App";
 import { Role } from "../backend";
 
@@ -25,29 +25,10 @@ export default function Header({
   onAdminClick,
   isRefreshing,
 }: HeaderProps) {
-  const [dark, setDark] = useState(() => {
-    const saved = localStorage.getItem("rowerek_theme");
-    return saved === "dark";
-  });
-
+  // Always dark mode
   useEffect(() => {
-    if (dark) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("rowerek_theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("rowerek_theme", "light");
-    }
-  }, [dark]);
-
-  // Apply saved theme on first render
-  useEffect(() => {
-    const saved = localStorage.getItem("rowerek_theme");
-    if (saved === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
+    document.documentElement.classList.add("dark");
+    localStorage.setItem("rowerek_theme", "dark");
   }, []);
 
   return (
@@ -102,16 +83,6 @@ export default function Header({
               <Settings className="h-5 w-5" />
             </Button>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 text-foreground hover:text-foreground"
-            onClick={() => setDark((v) => !v)}
-            aria-label={dark ? "Tryb jasny" : "Tryb ciemny"}
-            data-ocid="header.toggle"
-          >
-            {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
           {currentUser ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
