@@ -272,15 +272,9 @@ function App() {
         onLoginClick={() => setLoginOpen(true)}
         onLogout={handleLogout}
         onAdminClick={() => setAdminOpen(true)}
+        isRefreshing={refreshing}
       />
       <main className="max-w-lg mx-auto px-2 pb-10 pt-1">
-        {refreshing && (
-          <div className="flex justify-center py-1">
-            <span className="text-xs text-muted-foreground animate-pulse">
-              odświeżanie...
-            </span>
-          </div>
-        )}
         <CalendarView
           dateKeys={dateKeys}
           activities={activities}
@@ -317,13 +311,13 @@ function App() {
       <Toaster position="top-center" richColors />
       {/* PWA icons - required for manifest, do not remove */}
       <img
-        src="/assets/generated/rowerek-icon-192.dim_192x192.png"
+        src="/assets/generated/rowerek-icon-192-transparent.dim_192x192.png"
         style={{ display: "none" }}
         aria-hidden="true"
         alt=""
       />
       <img
-        src="/assets/generated/rowerek-icon-512.dim_512x512.png"
+        src="/assets/generated/rowerek-icon-512-transparent.dim_512x512.png"
         style={{ display: "none" }}
         aria-hidden="true"
         alt=""

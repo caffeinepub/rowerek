@@ -45,7 +45,7 @@ export default function ActivityCard({
   return (
     <button
       type="button"
-      className={`relative w-full text-left cursor-pointer rounded-md border transition-all card-press select-none bg-primary/5 ${
+      className={`relative w-full text-left cursor-pointer rounded-md border transition-all card-press select-none bg-primary/15 dark:bg-slate-700/60 ${
         isMatching ? "glow-green" : "border-border hover:border-primary/40"
       }`}
       style={{ padding: "4px", paddingRight: "14px" }}

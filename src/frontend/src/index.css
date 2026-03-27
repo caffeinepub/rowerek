@@ -104,8 +104,8 @@
 
 @layer utilities {
   .glow-green {
-    box-shadow: 0 0 0 1.5px oklch(0.6 0.22 142), 0 0 8px
-      oklch(0.6 0.22 142 / 0.4);
+    box-shadow: 0 0 0 1.5px oklch(0.65 0.22 230), 0 0 8px
+      oklch(0.65 0.22 230 / 0.4);
   }
 
   .card-press {

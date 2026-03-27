@@ -104,15 +104,15 @@ export default function DayRow({
           data-ocid={`calendar.day.label.${index}`}
         >
           <span
-            className={`text-[10px] font-bold leading-tight uppercase tracking-wide ${
-              weekend ? "text-sky-400" : "text-foreground"
+            className={`text-[13px] font-bold leading-tight uppercase tracking-wide ${
+              weekend ? "text-sky-400" : "text-gray-400 dark:text-gray-500"
             }`}
           >
             {dayName}
           </span>
           <span
-            className={`text-base font-extrabold leading-tight ${
-              weekend ? "text-sky-400" : "text-foreground"
+            className={`text-xl font-extrabold leading-tight ${
+              weekend ? "text-sky-400" : "text-gray-400 dark:text-gray-500"
             }`}
           >
             {dayNum}
