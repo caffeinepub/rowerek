@@ -5,7 +5,7 @@ import type { Activity, backendInterface } from "../backend";
 import { getDayNumber, getPolishDayName, isWeekend } from "../utils/helpers";
 import ActivityCard from "./ActivityCard";
 import ActivityDetailSheet from "./ActivityDetailSheet";
-import ActivitySheet from "./ActivitySheet";
+import AddActivitySheet from "./AddActivitySheet";
 
 interface DayRowProps {
   dateKey: string;
@@ -28,23 +28,16 @@ export default function DayRow({
   onSetDayActivities,
   onLoginRequired,
 }: DayRowProps) {
-  // activitySheetActivity: null = new activity, Activity = edit own activity
-  const [activitySheetOpen, setActivitySheetOpen] = useState(false);
-  const [activitySheetTarget, setActivitySheetTarget] =
-    useState<Activity | null>(null);
-
-  const [selectedOtherActivity, setSelectedOtherActivity] =
-    useState<Activity | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(
+    null,
+  );
   const [detailOpen, setDetailOpen] = useState(false);
 
-  // Keep ref for sheet animation
-  const lastOtherActivityRef = useRef<Activity | null>(null);
-  if (selectedOtherActivity !== null) {
-    lastOtherActivityRef.current = selectedOtherActivity;
-  }
-  const lastSheetTargetRef = useRef<Activity | null>(null);
-  if (activitySheetTarget !== null) {
-    lastSheetTargetRef.current = activitySheetTarget;
+  // Keep last activity in a ref so the sheet stays mounted during close animation
+  const lastActivityRef = useRef<Activity | null>(null);
+  if (selectedActivity !== null) {
+    lastActivityRef.current = selectedActivity;
   }
 
   const dayName = getPolishDayName(dateKey);
@@ -59,7 +52,6 @@ export default function DayRow({
   const isMatching = (a: Activity) =>
     (matchKeys[`${a.emoji}|${a.startTime}`] ?? 0) > 1;
 
-  // Open unified sheet in "new activity" mode
   const handleAddClick = () => {
     if (!currentUser) {
       onLoginRequired();
@@ -72,8 +64,7 @@ export default function DayRow({
       toast.error("Osiągnąłeś limit 3 aktywności na ten dzień");
       return;
     }
-    setActivitySheetTarget(null);
-    setActivitySheetOpen(true);
+    setAddOpen(true);
   };
 
   const handleCardClick = (activity: Activity) => {
@@ -81,25 +72,19 @@ export default function DayRow({
       onLoginRequired();
       return;
     }
-    if (currentUser.username === activity.username) {
-      // Own activity: open unified sheet in edit mode
-      setActivitySheetTarget(activity);
-      setActivitySheetOpen(true);
-    } else {
-      // Other user's activity: open detail/join sheet
-      setSelectedOtherActivity(activity);
-      setDetailOpen(true);
-    }
+    setSelectedActivity(activity);
+    setDetailOpen(true);
   };
 
-  const handleDetailClose = () => {
+  // Don't clear selectedActivity immediately - let the animation finish.
+  // The ref keeps the last activity alive for the sheet during animation.
+  const handleDetailClose = (afterClose?: () => void) => {
+    afterClose?.();
     setDetailOpen(false);
-    setTimeout(() => setSelectedOtherActivity(null), 400);
-  };
-
-  const handleActivitySheetClose = () => {
-    setActivitySheetOpen(false);
-    setTimeout(() => setActivitySheetTarget(null), 400);
+    // Delay clearing selectedActivity so sheet can animate out without unmounting
+    setTimeout(() => {
+      setSelectedActivity(null);
+    }, 400);
   };
 
   return (
@@ -134,7 +119,7 @@ export default function DayRow({
           </span>
         </button>
 
-        {/* Activities area */}
+        {/* Activities area - clicking empty space opens add panel */}
         <div
           className="flex-1 p-1.5 pl-1 bg-card cursor-pointer"
           onClick={handleAddClick}
@@ -164,39 +149,38 @@ export default function DayRow({
         </div>
       </div>
 
-      {/* Unified activity sheet for own activities and new activities */}
+      {/* Always render when user is logged in - open prop controls animation, not mounting */}
       {currentUser && (
-        <ActivitySheet
-          open={activitySheetOpen}
-          onClose={handleActivitySheetClose}
+        <AddActivitySheet
+          open={addOpen}
+          onClose={() => setAddOpen(false)}
           dateKey={dateKey}
-          activity={
-            activitySheetOpen ? activitySheetTarget : lastSheetTargetRef.current
-          }
+          actor={actor}
           currentUser={currentUser}
           dayActivities={activities}
-          actor={actor}
-          onSuccess={(updated) => {
-            handleActivitySheetClose();
-            onSetDayActivities(dateKey, updated);
+          onSuccess={(newActivity) => {
+            setAddOpen(false);
+            onSetDayActivities(dateKey, [...activities, newActivity]);
             onRefresh().catch(() => {});
           }}
         />
       )}
 
-      {/* Other user's activity sheet */}
-      {currentUser && lastOtherActivityRef.current && (
+      {/* Use lastActivityRef.current so component stays mounted during close animation */}
+      {currentUser && lastActivityRef.current && (
         <ActivityDetailSheet
           open={detailOpen}
-          activity={lastOtherActivityRef.current}
+          activity={lastActivityRef.current}
+          isOwn={currentUser.username === lastActivityRef.current.username}
           currentUser={currentUser}
           allDayActivities={activities}
           actor={actor}
           onClose={handleDetailClose}
-          onSuccess={(updated) => {
-            handleDetailClose();
-            onSetDayActivities(dateKey, updated);
-            onRefresh().catch(() => {});
+          onSuccess={(updatedActivities) => {
+            handleDetailClose(() => {
+              onSetDayActivities(dateKey, updatedActivities);
+              onRefresh().catch(() => {});
+            });
           }}
         />
       )}
