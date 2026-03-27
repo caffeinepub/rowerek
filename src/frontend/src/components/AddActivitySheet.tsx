@@ -6,7 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -143,15 +143,14 @@ export default function AddActivitySheet({
         onFocusOutside={(e) => e.preventDefault()}
         data-ocid="add_activity.sheet"
       >
-        <SheetHeader className="mb-3">
+        <div className="flex flex-col gap-3 px-4 pt-3">
+          {/* Username */}
           <div className="text-base font-semibold" style={{ color }}>
             {currentUser.username}
           </div>
-        </SheetHeader>
 
-        <div className="flex flex-col gap-4">
           {/* Time */}
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1">
             <div className="text-sm font-medium text-foreground">
               Godzina rozpoczęcia
             </div>
@@ -186,7 +185,7 @@ export default function AddActivitySheet({
           </div>
 
           {/* Emoji */}
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1">
             <div className="text-sm font-medium text-foreground">Emotka</div>
             <div className="flex gap-2 items-center">
               {quickEmojis.map((e) => (
@@ -223,7 +222,7 @@ export default function AddActivitySheet({
           </div>
 
           {/* Duration */}
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1">
             <div className="text-sm font-medium text-foreground">
               Czas trwania
             </div>
@@ -269,7 +268,7 @@ export default function AddActivitySheet({
           </div>
 
           {/* Initial message / note */}
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1">
             <div className="flex justify-between">
               <div className="text-sm font-medium text-foreground">
                 Wiadomość (opcjonalnie)

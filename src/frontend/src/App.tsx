@@ -311,13 +311,13 @@ function App() {
       <Toaster position="top-center" richColors />
       {/* PWA icons - required for manifest, do not remove */}
       <img
-        src="/assets/generated/rowerek-icon-192-transparent.dim_192x192.png"
+        src="/assets/generated/rowerek-icon-192-round.dim_192x192.png"
         style={{ display: "none" }}
         aria-hidden="true"
         alt=""
       />
       <img
-        src="/assets/generated/rowerek-icon-512-transparent.dim_512x512.png"
+        src="/assets/generated/rowerek-icon-512-round.dim_512x512.png"
         style={{ display: "none" }}
         aria-hidden="true"
         alt=""
