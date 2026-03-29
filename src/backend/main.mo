@@ -3,10 +3,9 @@ import Error "mo:base/Error";
 import Map "mo:core/Map";
 import Time "mo:base/Time";
 
-persistent actor {
+actor {
   type Role = { #user; #admin };
 
-  // Old types kept for stable-var upgrade compatibility
   type OldActivity = {
     id : Nat;
     dateKey : Text;
@@ -36,11 +35,10 @@ persistent actor {
     timestamp : Int;
   };
 
-  // Old let-bindings kept for upgrade compatibility
-  let users : Map.Map<Text, Text> = Map.empty<Text, Text>();
-  let activityDays : Map.Map<Text, Map.Map<Nat, OldActivity>> =
-    Map.empty<Text, Map.Map<Nat, OldActivity>>();
-  let isLoggedIn : Map.Map<Text, Role> = Map.empty<Text, Role>();
+  // Old stable vars retained for upgrade compatibility (not used in logic)
+  stable var users : Map.Map<Text, Text> = Map.empty();
+  stable var activityDays : Map.Map<Text, Map.Map<Nat, OldActivity>> = Map.empty();
+  stable var isLoggedIn : Map.Map<Text, Role> = Map.empty();
   stable var nextActivityId : Nat = 0;
 
   // Active stable vars (flat arrays)
@@ -50,7 +48,7 @@ persistent actor {
   stable var _nextActivityId : Nat = 0;
   stable var _nextMessageId : Nat = 0;
 
-  // ── AUTH ────────────────────────────────────────────────────────────────────
+  // AUTH
   public shared func login(pin : Text) : async (Text, Role) {
     if (pin == "6464") {
       return ("admin", #admin);
@@ -63,7 +61,7 @@ persistent actor {
     throw Error.reject("Wrong PIN");
   };
 
-  // ── USER MANAGEMENT ─────────────────────────────────────────────────────────
+  // USER MANAGEMENT
   public shared func addUser(name : Text, pin : Text) : async () {
     if (pin.size() != 4) {
       throw Error.reject("PIN must be 4 digits");
@@ -84,7 +82,7 @@ persistent actor {
     Array.map<UserRecord, (Text, Text)>(_users, func(u) { (u.username, u.pin) });
   };
 
-  // ── ACTIVITIES ───────────────────────────────────────────────────────────────
+  // ACTIVITIES
   func countUserDay(dateKey : Text, username : Text) : Nat {
     var count = 0;
     for (a in _activities.vals()) {
@@ -176,7 +174,7 @@ persistent actor {
     throw Error.reject("Activity not found");
   };
 
-  // ── MESSAGES / CHAT ──────────────────────────────────────────────────────────
+  // MESSAGES / CHAT
   public shared func addMessage(threadId : Text, author : Text, text : Text) : async Nat {
     if (text.size() > 500) {
       throw Error.reject("Message too long");
