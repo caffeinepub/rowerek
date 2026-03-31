@@ -2,7 +2,12 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { UserSession } from "../App";
 import type { Activity, backendInterface } from "../backend";
-import { getDayNumber, getPolishDayName, isWeekend } from "../utils/helpers";
+import {
+  getDayNumber,
+  getPolishDayName,
+  getUsernameColor,
+  isWeekend,
+} from "../utils/helpers";
 import ActivityCard from "./ActivityCard";
 import ActivityDetailSheet from "./ActivityDetailSheet";
 import AddActivitySheet from "./AddActivitySheet";
@@ -51,6 +56,24 @@ export default function DayRow({
   }
   const isMatching = (a: Activity) =>
     (matchKeys[`${a.emoji}|${a.startTime}`] ?? 0) > 1;
+
+  // Find the "creator" (lowest id) for each matching group
+  const matchCreators: Record<string, string> = {};
+  for (const key of Object.keys(matchKeys)) {
+    if (matchKeys[key] > 1) {
+      const group = activities.filter(
+        (a) => `${a.emoji}|${a.startTime}` === key,
+      );
+      const sorted = [...group].sort((x, y) => Number(x.id) - Number(y.id));
+      matchCreators[key] = sorted[0].username;
+    }
+  }
+
+  const getMatchColor = (a: Activity): string | undefined => {
+    const k = `${a.emoji}|${a.startTime}`;
+    if ((matchKeys[k] ?? 0) <= 1) return undefined;
+    return getUsernameColor(matchCreators[k] ?? a.username);
+  };
 
   const handleAddClick = () => {
     if (!currentUser) {
@@ -139,6 +162,7 @@ export default function DayRow({
                   key={String(a.id)}
                   activity={a}
                   isMatching={isMatching(a)}
+                  matchColor={getMatchColor(a)}
                   isOwn={currentUser?.username === a.username}
                   index={ci + 1}
                   onClick={() => handleCardClick(a)}

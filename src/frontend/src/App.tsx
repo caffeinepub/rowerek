@@ -7,7 +7,11 @@ import CalendarView from "./components/CalendarView";
 import Header from "./components/Header";
 import LoginSheet from "./components/LoginSheet";
 import { useActor } from "./hooks/useActor";
-import { formatLocalDate, getNext14DateKeys } from "./utils/helpers";
+import {
+  formatLocalDate,
+  getNext14DateKeys,
+  setUserColors,
+} from "./utils/helpers";
 
 export interface UserSession {
   username: string;
@@ -201,6 +205,23 @@ function App() {
       loadAll();
     }
   }, [actor, isFetching, loadAll]);
+
+  // Load user colors from backend so all components get correct per-user colors
+  useEffect(() => {
+    if (!actor || isFetching) return;
+    actor
+      .getUsers()
+      .then((rawUsers) => {
+        // backend.ts has old [string,string][] type; actual runtime returns [string,string,string][]
+        const users = rawUsers as unknown as Array<[string, string, string]>;
+        const colors: Record<string, string> = {};
+        for (const [name, , color] of users) {
+          if (color) colors[name] = color;
+        }
+        setUserColors(colors);
+      })
+      .catch(() => {});
+  }, [actor, isFetching]);
 
   // Clear badge when user focuses/visits the app
   useEffect(() => {

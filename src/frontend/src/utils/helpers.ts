@@ -45,7 +45,15 @@ const PASTEL_COLORS: string[] = [
   "#7090c8",
 ];
 
+// Module-level store for per-user colors assigned by admin
+let _storedUserColors: Record<string, string> = {};
+
+export function setUserColors(colors: Record<string, string>): void {
+  _storedUserColors = colors;
+}
+
 export function getUsernameColor(username: string): string {
+  if (_storedUserColors[username]) return _storedUserColors[username];
   let hash = 0;
   for (const c of username)
     hash = (hash * 31 + c.charCodeAt(0)) % PASTEL_COLORS.length;
@@ -60,63 +68,3 @@ export const TIME_OPTIONS: string[] = (() => {
   }
   return opts;
 })();
-
-export const EMOJI_OPTIONS = [
-  "🚴",
-  "🏃",
-  "☀️",
-  "🌧️",
-  "🌤️",
-  "⛅",
-  "🌈",
-  "🏔️",
-  "🌊",
-  "🌿",
-  "🍃",
-  "🐦",
-  "🌸",
-  "🌻",
-  "⚡",
-  "🌙",
-  "💪",
-  "🏁",
-  "🎯",
-  "🎉",
-];
-
-const EMOJI_USAGE_KEY = "rowerek_emoji_usage";
-const DEFAULT_QUICK_EMOJIS = ["🚴", "🏃", "☀️", "🌧️"];
-
-export function getQuickEmojis(): string[] {
-  try {
-    const raw = localStorage.getItem(EMOJI_USAGE_KEY);
-    if (!raw) return DEFAULT_QUICK_EMOJIS;
-    const usage: Record<string, number> = JSON.parse(raw);
-    const sorted = Object.entries(usage)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 4)
-      .map(([emoji]) => emoji);
-    // fill up to 4 with defaults if needed
-    for (const e of DEFAULT_QUICK_EMOJIS) {
-      if (sorted.length >= 4) break;
-      if (!sorted.includes(e)) sorted.push(e);
-    }
-    return sorted;
-  } catch {
-    return DEFAULT_QUICK_EMOJIS;
-  }
-}
-
-export function trackEmojiUsage(emoji: string): void {
-  try {
-    const raw = localStorage.getItem(EMOJI_USAGE_KEY);
-    const usage: Record<string, number> = raw ? JSON.parse(raw) : {};
-    usage[emoji] = (usage[emoji] ?? 0) + 1;
-    localStorage.setItem(EMOJI_USAGE_KEY, JSON.stringify(usage));
-  } catch {
-    // ignore
-  }
-}
-
-// Keep for backward compat
-export const QUICK_EMOJIS = DEFAULT_QUICK_EMOJIS;

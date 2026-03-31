@@ -4,6 +4,7 @@ import { getUsernameColor } from "../utils/helpers";
 interface ActivityCardProps {
   activity: Activity;
   isMatching: boolean;
+  matchColor?: string;
   isOwn: boolean;
   index: number;
   onClick: () => void;
@@ -32,6 +33,7 @@ function BatteryBars({ durationHalfHours }: { durationHalfHours: number }) {
 export default function ActivityCard({
   activity,
   isMatching,
+  matchColor,
   index,
   onClick,
 }: ActivityCardProps) {
@@ -42,13 +44,26 @@ export default function ActivityCard({
       ? activity.username.slice(0, 11)
       : activity.username;
 
+  const glowColor = matchColor ?? "#7dd3fc";
+
   return (
     <button
       type="button"
       className={`relative w-full text-left cursor-pointer rounded-md border transition-all card-press select-none bg-slate-900 ${
-        isMatching ? "glow-blue" : "border-border hover:border-primary/40"
+        isMatching
+          ? "border-transparent"
+          : "border-border hover:border-primary/40"
       }`}
-      style={{ padding: "4px", paddingRight: "14px" }}
+      style={{
+        padding: "4px",
+        paddingRight: "14px",
+        ...(isMatching
+          ? {
+              borderColor: glowColor,
+              boxShadow: `0 0 0 1.5px ${glowColor}, 0 0 8px ${glowColor}40`,
+            }
+          : {}),
+      }}
       onClick={(e) => {
         e.stopPropagation();
         onClick();

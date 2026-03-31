@@ -32,19 +32,25 @@ export const idlService = IDL.Service({
       [],
     ),
   'addMessage' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Nat], []),
-  'addUser' : IDL.Func([IDL.Text, IDL.Text], [], []),
+  'addUser' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
   'deleteActivity' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+  'getActivitiesFiltered' : IDL.Func(
+      [IDL.Text, IDL.Text],
+      [IDL.Vec(Activity)],
+      ['query'],
+    ),
   'getActivitiesForDay' : IDL.Func([IDL.Text], [IDL.Vec(Activity)], ['query']),
   'getMessages' : IDL.Func([IDL.Text], [IDL.Vec(Message)], ['query']),
   'getUsers' : IDL.Func(
       [],
-      [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text))],
+      [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text, IDL.Text))],
       ['query'],
     ),
   'joinActivity' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Nat], []),
   'login' : IDL.Func([IDL.Text], [IDL.Text, Role], []),
   'purgeOldActivities' : IDL.Func([IDL.Text], [IDL.Bool], []),
   'removeUser' : IDL.Func([IDL.Text], [], []),
+  'setVisibility' : IDL.Func([IDL.Nat, IDL.Text], [], []),
   'updateActivityTime' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Bool], []),
 });
 
@@ -75,8 +81,13 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'addMessage' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Nat], []),
-    'addUser' : IDL.Func([IDL.Text, IDL.Text], [], []),
+    'addUser' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
     'deleteActivity' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+    'getActivitiesFiltered' : IDL.Func(
+        [IDL.Text, IDL.Text],
+        [IDL.Vec(Activity)],
+        ['query'],
+      ),
     'getActivitiesForDay' : IDL.Func(
         [IDL.Text],
         [IDL.Vec(Activity)],
@@ -85,13 +96,14 @@ export const idlFactory = ({ IDL }) => {
     'getMessages' : IDL.Func([IDL.Text], [IDL.Vec(Message)], ['query']),
     'getUsers' : IDL.Func(
         [],
-        [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text))],
+        [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text, IDL.Text))],
         ['query'],
       ),
     'joinActivity' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Nat], []),
     'login' : IDL.Func([IDL.Text], [IDL.Text, Role], []),
     'purgeOldActivities' : IDL.Func([IDL.Text], [IDL.Bool], []),
     'removeUser' : IDL.Func([IDL.Text], [], []),
+    'setVisibility' : IDL.Func([IDL.Nat, IDL.Text], [], []),
     'updateActivityTime' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Bool], []),
   });
 };

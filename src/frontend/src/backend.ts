@@ -109,16 +109,15 @@ export enum Role {
     user = "user"
 }
 export interface backendInterface {
-    _isAdmin(sessionId: string): Promise<boolean>;
     addActivity(dateKey: string, username: string, startTime: string, emoji: string, durationHours: bigint): Promise<bigint>;
     addMessage(threadId: string, author: string, text: string): Promise<bigint>;
     getMessages(threadId: string): Promise<Array<Message>>;
-    addUser(name: string, pin: string): Promise<void>;
+    addUser(name: string, pin: string, color: string): Promise<void>;
     deleteActivity(activityId: bigint): Promise<boolean>;
     getActivitiesForDay(dateKey: string): Promise<Array<Activity>>;
     getActivitiesFiltered(dateKey: string, callerUsername: string): Promise<Array<Activity>>;
     setVisibility(activityId: bigint, vis: string): Promise<void>;
-    getUsers(): Promise<Array<[string, string]>>;
+    getUsers(): Promise<Array<[string, string, string]>>;
     joinActivity(existingActivityId: bigint, username: string): Promise<bigint>;
     login(pin: string): Promise<[string, Role]>;
     purgeOldActivities(todayKey: string): Promise<boolean>;
@@ -128,20 +127,6 @@ export interface backendInterface {
 import type { Role as _Role } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
-    async _isAdmin(arg0: string): Promise<boolean> {
-        if (this.processError) {
-            try {
-                const result = await this.actor._isAdmin(arg0);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor._isAdmin(arg0);
-            return result;
-        }
-    }
     async addActivity(arg0: string, arg1: string, arg2: string, arg3: string, arg4: bigint): Promise<bigint> {
         if (this.processError) {
             try {
@@ -184,17 +169,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async addUser(arg0: string, arg1: string): Promise<void> {
+    async addUser(arg0: string, arg1: string, arg2: string): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.addUser(arg0, arg1);
+                const result = await this.actor.addUser(arg0, arg1, arg2);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.addUser(arg0, arg1);
+            const result = await this.actor.addUser(arg0, arg1, arg2);
             return result;
         }
     }
@@ -252,7 +237,7 @@ export class Backend implements backendInterface {
             await this.actor.setVisibility(arg0, arg1);
         }
     }
-    async getUsers(): Promise<Array<[string, string]>> {
+    async getUsers(): Promise<Array<[string, string, string]>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getUsers();

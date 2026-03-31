@@ -7,6 +7,7 @@ import Map "mo:core/Map";
 actor {
   type Role = { #user; #admin };
 
+  // UserRecord deliberately kept simple (no color field) to preserve stable storage
   type UserRecord = { username : Text; pin : Text };
 
   type OldActivity = {
@@ -36,7 +37,7 @@ actor {
     timestamp : Int;
   };
 
-  // Legacy stable vars retained for upgrade compatibility - NOT used in logic
+  // Legacy stable vars retained for upgrade compatibility -- NOT used in logic
   stable var users : Map.Map<Text, Text> = Map.empty();
   stable var activityDays : Map.Map<Text, Map.Map<Nat, OldActivity>> = Map.empty();
   stable var isLoggedIn : Map.Map<Text, Role> = Map.empty();
@@ -50,6 +51,8 @@ actor {
   stable var _nextMessageId : Nat = 0;
   // Visibility: (activityId, vis) where vis = "wszyscy" | comma-separated usernames
   stable var _visibility : [(Nat, Text)] = [];
+  // Per-user colors: (username, cssColor)
+  stable var _userColors : [(Text, Text)] = [];
 
   // AUTH
   public shared func login(pin : Text) : async (Text, Role) {
@@ -65,7 +68,7 @@ actor {
   };
 
   // USER MANAGEMENT
-  public shared func addUser(name : Text, pin : Text) : async () {
+  public shared func addUser(name : Text, pin : Text, color : Text) : async () {
     if (pin.size() != 4) {
       throw Error.reject("PIN must be 4 digits");
     };
@@ -75,14 +78,26 @@ actor {
       };
     };
     _users := Array.append(_users, [{ username = name; pin = pin }]);
+    // Store color (replace if exists)
+    _userColors := Array.filter<(Text, Text)>(_userColors, func(c) { c.0 != name });
+    if (color != "") {
+      _userColors := Array.append(_userColors, [(name, color)]);
+    };
   };
 
   public shared func removeUser(name : Text) : async () {
     _users := Array.filter<UserRecord>(_users, func(u) { u.username != name });
+    _userColors := Array.filter<(Text, Text)>(_userColors, func(c) { c.0 != name });
   };
 
-  public query func getUsers() : async [(Text, Text)] {
-    Array.map<UserRecord, (Text, Text)>(_users, func(u) { (u.username, u.pin) });
+  public query func getUsers() : async [(Text, Text, Text)] {
+    Array.map<UserRecord, (Text, Text, Text)>(_users, func(u) {
+      var color = "";
+      for (c in _userColors.vals()) {
+        if (c.0 == u.username) { color := c.1 };
+      };
+      (u.username, u.pin, color)
+    });
   };
 
   // ACTIVITIES

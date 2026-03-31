@@ -29,14 +29,16 @@ export enum Role {
 export interface backendInterface {
     addActivity(dateKey: string, username: string, startTime: string, emoji: string, durationHours: bigint): Promise<bigint>;
     addMessage(threadId: string, author: string, text: string): Promise<bigint>;
-    addUser(name: string, pin: string): Promise<void>;
+    addUser(name: string, pin: string, color: string): Promise<void>;
     deleteActivity(activityId: bigint): Promise<boolean>;
+    getActivitiesFiltered(dateKey: string, callerUsername: string): Promise<Array<Activity>>;
     getActivitiesForDay(dateKey: string): Promise<Array<Activity>>;
     getMessages(threadId: string): Promise<Array<Message>>;
-    getUsers(): Promise<Array<[string, string]>>;
+    getUsers(): Promise<Array<[string, string, string]>>;
     joinActivity(existingActivityId: bigint, username: string): Promise<bigint>;
     login(pin: string): Promise<[string, Role]>;
     purgeOldActivities(todayKey: string): Promise<boolean>;
     removeUser(name: string): Promise<void>;
+    setVisibility(activityId: bigint, vis: string): Promise<void>;
     updateActivityTime(activityId: bigint, newStartTime: string): Promise<boolean>;
 }

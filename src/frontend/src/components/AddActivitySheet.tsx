@@ -12,12 +12,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { UserSession } from "../App";
 import type { Activity, backendInterface } from "../backend";
-import {
-  TIME_OPTIONS,
-  getQuickEmojis,
-  getUsernameColor,
-  trackEmojiUsage,
-} from "../utils/helpers";
+import { TIME_OPTIONS, getUsernameColor } from "../utils/helpers";
 
 interface AddActivitySheetProps {
   open: boolean;
@@ -68,7 +63,6 @@ export default function AddActivitySheet({
   const [halfHour, setHalfHour] = useState(false);
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
-  const [quickEmojis, setQuickEmojis] = useState<string[]>(getQuickEmojis);
   const [emojiKey, setEmojiKey] = useState(0);
 
   // Visibility
@@ -78,7 +72,6 @@ export default function AddActivitySheet({
 
   useEffect(() => {
     if (open) {
-      setQuickEmojis(getQuickEmojis());
       // Fetch users for visibility picker
       if (actor) {
         actor
@@ -102,16 +95,7 @@ export default function AddActivitySheet({
 
   const selectEmoji = (e: string) => {
     setEmoji(e);
-    trackEmojiUsage(e);
-    setQuickEmojis(getQuickEmojis());
     setEmojiKey((k) => k + 1);
-  };
-
-  const handleEmojiInputChange = (val: string) => {
-    const lastGrapheme = getLastGrapheme(val);
-    if (lastGrapheme?.trim()) {
-      selectEmoji(lastGrapheme);
-    }
   };
 
   const toggleUser = (username: string) => {
@@ -251,42 +235,23 @@ export default function AddActivitySheet({
           {/* Emoji */}
           <div className="flex flex-col gap-1">
             <div className="text-sm font-medium text-foreground">Emotka</div>
-            <div className="flex gap-2 items-center">
-              {quickEmojis.map((e) => (
-                <button
-                  type="button"
-                  key={e}
-                  onClick={() => selectEmoji(e)}
-                  className={`w-12 h-12 text-2xl rounded-lg border-2 transition-all ${
-                    emoji === e
-                      ? "border-primary bg-primary/10"
-                      : "border-border bg-card hover:border-primary/50"
-                  }`}
-                  data-ocid="add_activity.emoji_input"
-                >
-                  {e}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-sm text-muted-foreground flex-shrink-0">
-                Wpisz lub wybierz:
+            <div className="flex items-center gap-3">
+              <span className="text-5xl leading-none w-14 h-14 flex items-center justify-center rounded-xl border-2 border-primary/40 bg-primary/5 select-none">
+                {emoji}
               </span>
               <input
                 key={emojiKey}
                 type="text"
                 inputMode="text"
                 defaultValue=""
-                onChange={(e) => handleEmojiInputChange(e.target.value)}
-                placeholder="\uD83D\uDCF2 kliknij..."
-                className="flex-1 h-10 rounded-lg border border-border bg-card px-3 text-xl text-center dark:text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                onChange={(e) => {
+                  const last = getLastGrapheme(e.target.value);
+                  if (last?.trim()) selectEmoji(last);
+                }}
+                placeholder="kliknij i wybierz emotkę..."
+                className="flex-1 h-14 rounded-xl border-2 border-border bg-card px-3 text-xl text-center text-foreground placeholder:text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                data-ocid="add_activity.emoji_input"
               />
-              <span
-                className="text-4xl w-14 h-14 flex items-center justify-center rounded-xl border-2 border-primary/40 bg-primary/5"
-                aria-label="Wybrana emotka"
-              >
-                {emoji}
-              </span>
             </div>
           </div>
 
