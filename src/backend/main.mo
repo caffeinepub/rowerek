@@ -1,10 +1,13 @@
 import Array "mo:base/Array";
 import Error "mo:base/Error";
-import Map "mo:core/Map";
 import Time "mo:base/Time";
+import Text "mo:base/Text";
+import Map "mo:core/Map";
 
 actor {
   type Role = { #user; #admin };
+
+  type UserRecord = { username : Text; pin : Text };
 
   type OldActivity = {
     id : Nat;
@@ -15,8 +18,6 @@ actor {
     durationHours : Nat;
     note : Text;
   };
-
-  type UserRecord = { username : Text; pin : Text };
 
   type Activity = {
     id : Nat;
@@ -35,18 +36,20 @@ actor {
     timestamp : Int;
   };
 
-  // Old stable vars retained for upgrade compatibility (not used in logic)
+  // Legacy stable vars retained for upgrade compatibility - NOT used in logic
   stable var users : Map.Map<Text, Text> = Map.empty();
   stable var activityDays : Map.Map<Text, Map.Map<Nat, OldActivity>> = Map.empty();
   stable var isLoggedIn : Map.Map<Text, Role> = Map.empty();
   stable var nextActivityId : Nat = 0;
 
-  // Active stable vars (flat arrays)
+  // Active flat stable vars
   stable var _users : [UserRecord] = [];
   stable var _activities : [Activity] = [];
   stable var _messages : [Message] = [];
   stable var _nextActivityId : Nat = 0;
   stable var _nextMessageId : Nat = 0;
+  // Visibility: (activityId, vis) where vis = "wszyscy" | comma-separated usernames
+  stable var _visibility : [(Nat, Text)] = [];
 
   // AUTH
   public shared func login(pin : Text) : async (Text, Role) {
@@ -125,6 +128,45 @@ actor {
     id;
   };
 
+  // Set visibility: "wszyscy" means public; otherwise comma-separated usernames
+  public shared func setVisibility(activityId : Nat, vis : Text) : async () {
+    _visibility := Array.filter<(Nat, Text)>(
+      _visibility,
+      func(v) { v.0 != activityId },
+    );
+    if (vis != "wszyscy") {
+      _visibility := Array.append(_visibility, [(activityId, vis)]);
+    };
+  };
+
+  func getVisForActivity(activityId : Nat) : Text {
+    for (v in _visibility.vals()) {
+      if (v.0 == activityId) { return v.1 };
+    };
+    "wszyscy";
+  };
+
+  func canUserSeeActivity(activity : Activity, callerUsername : Text) : Bool {
+    if (activity.username == callerUsername) { return true };
+    let vis = getVisForActivity(activity.id);
+    if (vis == "wszyscy") { return true };
+    let parts = Text.split(vis, #char ',');
+    for (p in parts) {
+      if (p == callerUsername) { return true };
+    };
+    false;
+  };
+
+  public query func getActivitiesForDay(dateKey : Text) : async [Activity] {
+    Array.filter<Activity>(_activities, func(a) { a.dateKey == dateKey });
+  };
+
+  public query func getActivitiesFiltered(dateKey : Text, callerUsername : Text) : async [Activity] {
+    Array.filter<Activity>(_activities, func(a) {
+      a.dateKey == dateKey and canUserSeeActivity(a, callerUsername)
+    });
+  };
+
   public shared func updateActivityTime(activityId : Nat, newStartTime : Text) : async Bool {
     var found = false;
     _activities := Array.map<Activity, Activity>(_activities, func(a) {
@@ -140,16 +182,13 @@ actor {
   public shared func deleteActivity(activityId : Nat) : async Bool {
     let before = _activities.size();
     _activities := Array.filter<Activity>(_activities, func(a) { a.id != activityId });
+    _visibility := Array.filter<(Nat, Text)>(_visibility, func(v) { v.0 != activityId });
     _activities.size() < before;
   };
 
   public shared func purgeOldActivities(todayKey : Text) : async Bool {
     _activities := Array.filter<Activity>(_activities, func(a) { a.dateKey >= todayKey });
     true;
-  };
-
-  public query func getActivitiesForDay(dateKey : Text) : async [Activity] {
-    Array.filter<Activity>(_activities, func(a) { a.dateKey == dateKey });
   };
 
   public shared func joinActivity(existingActivityId : Nat, username : Text) : async Nat {

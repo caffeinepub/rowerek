@@ -16,6 +16,8 @@ interface HeaderProps {
   onLogout: () => void;
   onAdminClick: () => void;
   isRefreshing?: boolean;
+  badgeCount?: number;
+  onRefresh?: () => void;
 }
 
 export default function Header({
@@ -24,6 +26,8 @@ export default function Header({
   onLogout,
   onAdminClick,
   isRefreshing,
+  badgeCount = 0,
+  onRefresh,
 }: HeaderProps) {
   const [dark, setDark] = useState(() => {
     const saved = localStorage.getItem("rowerek_theme");
@@ -57,7 +61,13 @@ export default function Header({
     >
       <div className="max-w-lg mx-auto px-3 h-12 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="relative inline-flex items-center justify-center w-7 h-7">
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="relative inline-flex items-center justify-center w-7 h-7 rounded focus:outline-none active:opacity-70"
+            aria-label="Odśwież"
+            data-ocid="header.refresh_button"
+          >
             {isRefreshing ? (
               <svg
                 className="animate-spin w-6 h-6 text-primary"
@@ -84,7 +94,15 @@ export default function Header({
             ) : (
               <span className="text-xl">🚴</span>
             )}
-          </span>
+            {badgeCount > 0 && (
+              <span
+                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center px-[3px] leading-none pointer-events-none"
+                data-ocid="header.badge"
+              >
+                {badgeCount > 99 ? "99+" : badgeCount}
+              </span>
+            )}
+          </button>
           <span className="text-lg font-display font-bold text-foreground tracking-tight">
             Rowerek
           </span>

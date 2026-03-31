@@ -71,6 +71,7 @@ function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [badgeCount, setBadgeCount] = useState(0);
 
   // Keep ref to current activities + user for event handlers
   const activitiesRef = useRef(activities);
@@ -107,7 +108,10 @@ function App() {
     async (dateKey: string) => {
       if (!actor) return;
       try {
-        const dayActivities = await actor.getActivitiesForDay(dateKey);
+        const dayActivities = await actor.getActivitiesFiltered(
+          dateKey,
+          currentUserRef.current?.username ?? "",
+        );
         setActivities((prev) => {
           const updated = { ...prev, [dateKey]: dayActivities };
           try {
@@ -155,7 +159,12 @@ function App() {
       const dks = getNext14DateKeys();
       const [, ...results] = await Promise.all([
         actor.purgeOldActivities(today),
-        ...dks.map((dk) => actor.getActivitiesForDay(dk)),
+        ...dks.map((dk) =>
+          actor.getActivitiesFiltered(
+            dk,
+            currentUserRef.current?.username ?? "",
+          ),
+        ),
       ]);
       const map: Record<string, Activity[]> = {};
       dks.forEach((dk, i) => {
@@ -168,17 +177,16 @@ function App() {
         /* ignore */
       }
 
-      // App Badging: compare other-users' activity count to stored snapshot
-      if ("setAppBadge" in navigator) {
-        const myUsername = currentUserRef.current?.username;
-        const currentCount = countOtherUsersActivities(map, myUsername);
-        const snapshot = getBadgeSnapshot();
-        if (currentCount > snapshot) {
-          const newCount = currentCount - snapshot;
-          (navigator as NavType).setAppBadge?.(newCount).catch(() => {});
-        }
-        // Always update snapshot to current count so next load compares correctly
-        setBadgeSnapshot(currentCount);
+      // In-app badge: count new other-users activities since last seen
+      const myUsername = currentUserRef.current?.username;
+      const currentOtherCount = countOtherUsersActivities(map, myUsername);
+      const lastSeenCount = getBadgeSnapshot();
+      const newCount = Math.max(0, currentOtherCount - lastSeenCount);
+      setBadgeCount(newCount);
+
+      // PWA App Badging API
+      if ("setAppBadge" in navigator && newCount > 0) {
+        (navigator as NavType).setAppBadge?.(newCount).catch(() => {});
       }
     } catch {
       toast.error("Błąd ładowania danych");
@@ -197,6 +205,7 @@ function App() {
   // Clear badge when user focuses/visits the app
   useEffect(() => {
     const clearBadge = () => {
+      setBadgeCount(0);
       if ("clearAppBadge" in navigator) {
         (navigator as NavType).clearAppBadge?.().catch(() => {});
       }
@@ -250,6 +259,7 @@ function App() {
     setLoginOpen(false);
     toast.success(`Zalogowano jako ${username}`, { duration: 800 });
     // Clear badge on login — user is now looking at the app
+    setBadgeCount(0);
     if ("clearAppBadge" in navigator) {
       (navigator as NavType).clearAppBadge?.().catch(() => {});
     }
@@ -273,6 +283,8 @@ function App() {
         onLogout={handleLogout}
         onAdminClick={() => setAdminOpen(true)}
         isRefreshing={refreshing}
+        badgeCount={badgeCount}
+        onRefresh={() => loadAll()}
       />
       <main className="max-w-lg mx-auto px-2 pb-10 pt-1">
         <CalendarView

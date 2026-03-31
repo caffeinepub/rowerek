@@ -116,6 +116,8 @@ export interface backendInterface {
     addUser(name: string, pin: string): Promise<void>;
     deleteActivity(activityId: bigint): Promise<boolean>;
     getActivitiesForDay(dateKey: string): Promise<Array<Activity>>;
+    getActivitiesFiltered(dateKey: string, callerUsername: string): Promise<Array<Activity>>;
+    setVisibility(activityId: bigint, vis: string): Promise<void>;
     getUsers(): Promise<Array<[string, string]>>;
     joinActivity(existingActivityId: bigint, username: string): Promise<bigint>;
     login(pin: string): Promise<[string, Role]>;
@@ -222,6 +224,32 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getActivitiesForDay(arg0);
             return result;
+        }
+    }
+    async getActivitiesFiltered(arg0: string, arg1: string): Promise<Array<Activity>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getActivitiesFiltered(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getActivitiesFiltered(arg0, arg1);
+            return result;
+        }
+    }
+    async setVisibility(arg0: bigint, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                await this.actor.setVisibility(arg0, arg1);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            await this.actor.setVisibility(arg0, arg1);
         }
     }
     async getUsers(): Promise<Array<[string, string]>> {

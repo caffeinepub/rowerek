@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/select";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { UserSession } from "../App";
 import type { Activity, backendInterface } from "../backend";
@@ -36,6 +36,23 @@ const HOUR_OPTIONS = [
   { value: 4, label: "4h" },
 ];
 
+/** Extract the last grapheme cluster from a string using Intl.Segmenter */
+function getLastGrapheme(str: string): string {
+  if (!str) return "";
+  try {
+    const segmenter = new Intl.Segmenter(undefined, {
+      granularity: "grapheme",
+    });
+    const segments = [...segmenter.segment(str)];
+    if (segments.length === 0) return "";
+    return segments[segments.length - 1].segment;
+  } catch {
+    // Fallback for environments without Intl.Segmenter
+    const chars = [...str];
+    return chars[chars.length - 1] ?? "";
+  }
+}
+
 export default function AddActivitySheet({
   open,
   onClose,
@@ -46,19 +63,40 @@ export default function AddActivitySheet({
   onSuccess,
 }: AddActivitySheetProps) {
   const [time, setTime] = useState("08:00");
-  const [emoji, setEmoji] = useState("🚴");
+  const [emoji, setEmoji] = useState("\uD83D\uDEB4");
   const [hours, setHours] = useState(0);
   const [halfHour, setHalfHour] = useState(false);
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [quickEmojis, setQuickEmojis] = useState<string[]>(getQuickEmojis);
-  const emojiInputRef = useRef<HTMLInputElement>(null);
+  const [emojiKey, setEmojiKey] = useState(0);
+
+  // Visibility
+  const [visMode, setVisMode] = useState<"wszyscy" | "wybrane">("wszyscy");
+  const [allUsers, setAllUsers] = useState<string[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
   useEffect(() => {
     if (open) {
       setQuickEmojis(getQuickEmojis());
+      // Fetch users for visibility picker
+      if (actor) {
+        actor
+          .getUsers()
+          .then((users) => {
+            const names = users
+              .map(([name]) => name)
+              .filter((n) => n !== currentUser.username && n !== "admin");
+            setAllUsers(names);
+          })
+          .catch(() => {});
+      }
+    } else {
+      // Reset on close
+      setVisMode("wszyscy");
+      setSelectedUsers([]);
     }
-  }, [open]);
+  }, [open, actor, currentUser.username]);
 
   const color = getUsernameColor(currentUser.username);
 
@@ -66,14 +104,22 @@ export default function AddActivitySheet({
     setEmoji(e);
     trackEmojiUsage(e);
     setQuickEmojis(getQuickEmojis());
+    setEmojiKey((k) => k + 1);
   };
 
   const handleEmojiInputChange = (val: string) => {
-    const chars = [...val];
-    if (chars.length > 0) {
-      const last = chars[chars.length - 1];
-      selectEmoji(last);
+    const lastGrapheme = getLastGrapheme(val);
+    if (lastGrapheme?.trim()) {
+      selectEmoji(lastGrapheme);
     }
+  };
+
+  const toggleUser = (username: string) => {
+    setSelectedUsers((prev) =>
+      prev.includes(username)
+        ? prev.filter((u) => u !== username)
+        : [...prev, username],
+    );
   };
 
   const handleSubmit = async () => {
@@ -84,6 +130,13 @@ export default function AddActivitySheet({
     );
     if (duplicate) {
       toast.error(`Masz już aktywność o godzinie ${time} w tym dniu`);
+      return;
+    }
+
+    if (visMode === "wybrane" && selectedUsers.length === 0) {
+      toast.error(
+        "Wybierz przynajmniej jedną osobę lub zmień widoczność na wszyscy",
+      );
       return;
     }
 
@@ -99,13 +152,22 @@ export default function AddActivitySheet({
         BigInt(durationHalfHours),
       );
 
-      // If note provided, post it as first message in thread
+      // Set visibility if not public
+      if (visMode === "wybrane" && selectedUsers.length > 0) {
+        try {
+          await actor.setVisibility(newId, selectedUsers.join(","));
+        } catch {
+          // non-fatal
+        }
+      }
+
+      // Post initial note as message
       if (note.trim()) {
         const threadId = `${dateKey}|${emoji}|${time}`;
         try {
           await actor.addMessage(threadId, currentUser.username, note.trim());
         } catch {
-          // non-fatal: activity was created, message failed
+          // non-fatal
         }
       }
 
@@ -119,10 +181,12 @@ export default function AddActivitySheet({
         durationHours: BigInt(durationHalfHours),
       };
       setTime("08:00");
-      setEmoji("🚴");
+      setEmoji("\uD83D\uDEB4");
       setHours(0);
       setHalfHour(false);
       setNote("");
+      setVisMode("wszyscy");
+      setSelectedUsers([]);
       setSaving(false);
       onSuccess(newActivity);
     } catch (err: unknown) {
@@ -209,15 +273,20 @@ export default function AddActivitySheet({
                 Wpisz lub wybierz:
               </span>
               <input
-                ref={emojiInputRef}
+                key={emojiKey}
                 type="text"
                 inputMode="text"
-                value=""
+                defaultValue=""
                 onChange={(e) => handleEmojiInputChange(e.target.value)}
-                placeholder="📲 kliknij..."
+                placeholder="\uD83D\uDCF2 kliknij..."
                 className="flex-1 h-10 rounded-lg border border-border bg-card px-3 text-xl text-center dark:text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              <span className="text-2xl">{emoji}</span>
+              <span
+                className="text-4xl w-14 h-14 flex items-center justify-center rounded-xl border-2 border-primary/40 bg-primary/5"
+                aria-label="Wybrana emotka"
+              >
+                {emoji}
+              </span>
             </div>
           </div>
 
@@ -263,6 +332,67 @@ export default function AddActivitySheet({
                   : hours > 0
                     ? `${hours}h`
                     : "30 min"}
+              </div>
+            )}
+          </div>
+
+          {/* Visibility */}
+          <div className="flex flex-col gap-1.5">
+            <div className="text-sm font-medium text-foreground">
+              Widoczność
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setVisMode("wszyscy")}
+                className={`flex-1 h-10 text-sm font-medium rounded-lg border-2 transition-all ${
+                  visMode === "wszyscy"
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card text-foreground hover:border-primary/50"
+                }`}
+              >
+                Wszyscy
+              </button>
+              <button
+                type="button"
+                onClick={() => setVisMode("wybrane")}
+                className={`flex-1 h-10 text-sm font-medium rounded-lg border-2 transition-all ${
+                  visMode === "wybrane"
+                    ? "border-sky-400 bg-sky-400/20 text-sky-400"
+                    : "border-border bg-card text-foreground hover:border-primary/50"
+                }`}
+              >
+                Wybrane osoby
+              </button>
+            </div>
+
+            {visMode === "wybrane" && (
+              <div className="flex flex-col gap-1 pl-1">
+                {allUsers.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">
+                    Brak innych użytkowników
+                  </p>
+                ) : (
+                  allUsers.map((username) => (
+                    <label
+                      key={username}
+                      className="flex items-center gap-2 cursor-pointer py-1"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedUsers.includes(username)}
+                        onChange={() => toggleUser(username)}
+                        className="w-4 h-4 rounded accent-primary"
+                      />
+                      <span
+                        className="text-sm font-medium"
+                        style={{ color: getUsernameColor(username) }}
+                      >
+                        {username}
+                      </span>
+                    </label>
+                  ))
+                )}
               </div>
             )}
           </div>
