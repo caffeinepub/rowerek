@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import type { Activity, Role } from "./backend";
 import AdminPanel from "./components/AdminPanel";
 import CalendarView from "./components/CalendarView";
+import GpxPanel from "./components/GpxPanel";
 import Header from "./components/Header";
 import LoginSheet from "./components/LoginSheet";
 import { useActor } from "./hooks/useActor";
@@ -75,6 +76,7 @@ function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [gpxOpen, setGpxOpen] = useState(false);
   const [badgeCount, setBadgeCount] = useState(0);
 
   // Keep ref to current activities + user for event handlers
@@ -150,69 +152,96 @@ function App() {
     });
   }, []);
 
-  const loadAll = useCallback(async () => {
-    if (!actor) return;
-    const hasCached = Object.keys(getCachedActivities()).length > 0;
-    if (hasCached) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-    try {
-      const today = formatLocalDate(new Date());
-      const dks = getNext14DateKeys();
-      const [, ...results] = await Promise.all([
-        actor.purgeOldActivities(today),
-        ...dks.map((dk) =>
-          actor.getActivitiesFiltered(
-            dk,
-            currentUserRef.current?.username ?? "",
-          ),
-        ),
-      ]);
-      const map: Record<string, Activity[]> = {};
-      dks.forEach((dk, i) => {
-        map[dk] = results[i] as Activity[];
-      });
-      setActivities(map);
+  // loadAll: updateSnapshot=true updates the badge snapshot (called on explicit refresh)
+  // updateSnapshot=false is for background polling (badge accumulates)
+  const loadAll = useCallback(
+    async ({ updateSnapshot = false, silent = false } = {}) => {
+      if (!actor) return;
+      const hasCached = Object.keys(getCachedActivities()).length > 0;
+      if (!silent) {
+        if (hasCached) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
+      }
       try {
-        localStorage.setItem("rowerek_activities_cache", JSON.stringify(map));
+        const today = formatLocalDate(new Date());
+        const dks = getNext14DateKeys();
+        const [, ...results] = await Promise.all([
+          actor.purgeOldActivities(today),
+          ...dks.map((dk) =>
+            actor.getActivitiesFiltered(
+              dk,
+              currentUserRef.current?.username ?? "",
+            ),
+          ),
+        ]);
+        const map: Record<string, Activity[]> = {};
+        dks.forEach((dk, i) => {
+          map[dk] = results[i] as Activity[];
+        });
+        setActivities(map);
+        try {
+          localStorage.setItem("rowerek_activities_cache", JSON.stringify(map));
+        } catch {
+          /* ignore */
+        }
+
+        // Badge logic
+        const myUsername = currentUserRef.current?.username;
+        const currentOtherCount = countOtherUsersActivities(map, myUsername);
+
+        if (updateSnapshot) {
+          // User explicitly refreshed -- clear badge and update snapshot
+          setBadgeCount(0);
+          setBadgeSnapshot(currentOtherCount);
+          if ("clearAppBadge" in navigator) {
+            (navigator as NavType).clearAppBadge?.().catch(() => {});
+          }
+        } else {
+          // Background poll or initial load -- show new activity count
+          const lastSeenCount = getBadgeSnapshot();
+          const newCount = Math.max(0, currentOtherCount - lastSeenCount);
+          setBadgeCount(newCount);
+          if ("setAppBadge" in navigator && newCount > 0) {
+            (navigator as NavType).setAppBadge?.(newCount).catch(() => {});
+          }
+        }
       } catch {
-        /* ignore */
+        if (!silent) toast.error("Błąd ładowania danych");
+      } finally {
+        if (!silent) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
+    },
+    [actor],
+  );
 
-      // In-app badge: count new other-users activities since last seen
-      const myUsername = currentUserRef.current?.username;
-      const currentOtherCount = countOtherUsersActivities(map, myUsername);
-      const lastSeenCount = getBadgeSnapshot();
-      const newCount = Math.max(0, currentOtherCount - lastSeenCount);
-      setBadgeCount(newCount);
-
-      // PWA App Badging API
-      if ("setAppBadge" in navigator && newCount > 0) {
-        (navigator as NavType).setAppBadge?.(newCount).catch(() => {});
-      }
-    } catch {
-      toast.error("Błąd ładowania danych");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [actor]);
-
+  // Initial load
   useEffect(() => {
     if (actor && !isFetching) {
       loadAll();
     }
   }, [actor, isFetching, loadAll]);
 
-  // Load user colors from backend so all components get correct per-user colors
+  // Auto-refresh polling every 60 seconds (silent, badge accumulates)
+  useEffect(() => {
+    if (!actor || isFetching) return;
+    const interval = setInterval(() => {
+      loadAll({ silent: true });
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [actor, isFetching, loadAll]);
+
+  // Load user colors from backend
   useEffect(() => {
     if (!actor || isFetching) return;
     actor
       .getUsers()
       .then((rawUsers) => {
-        // backend.ts has old [string,string][] type; actual runtime returns [string,string,string][]
         const users = rawUsers as unknown as Array<[string, string, string]>;
         const colors: Record<string, string> = {};
         for (const [name, , color] of users) {
@@ -222,35 +251,6 @@ function App() {
       })
       .catch(() => {});
   }, [actor, isFetching]);
-
-  // Clear badge when user focuses/visits the app
-  useEffect(() => {
-    const clearBadge = () => {
-      setBadgeCount(0);
-      if ("clearAppBadge" in navigator) {
-        (navigator as NavType).clearAppBadge?.().catch(() => {});
-      }
-      // Update snapshot to current other-users count so no false badge on next load
-      const myUsername = currentUserRef.current?.username;
-      const currentCount = countOtherUsersActivities(
-        activitiesRef.current,
-        myUsername,
-      );
-      setBadgeSnapshot(currentCount);
-    };
-
-    const handleFocus = () => clearBadge();
-    const handleVisibility = () => {
-      if (!document.hidden) clearBadge();
-    };
-
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleVisibility);
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleVisibility);
-    };
-  }, []);
 
   // Midnight page reload
   useEffect(() => {
@@ -279,7 +279,7 @@ function App() {
     setCurrentUser({ username, role });
     setLoginOpen(false);
     toast.success(`Zalogowano jako ${username}`, { duration: 800 });
-    // Clear badge on login — user is now looking at the app
+    // Clear badge on login
     setBadgeCount(0);
     if ("clearAppBadge" in navigator) {
       (navigator as NavType).clearAppBadge?.().catch(() => {});
@@ -296,6 +296,10 @@ function App() {
     toast.success("Wylogowano", { duration: 1000 });
   };
 
+  const handleRefresh = useCallback(() => {
+    loadAll({ updateSnapshot: true });
+  }, [loadAll]);
+
   return (
     <div className="min-h-screen bg-background font-body">
       <Header
@@ -303,9 +307,10 @@ function App() {
         onLoginClick={() => setLoginOpen(true)}
         onLogout={handleLogout}
         onAdminClick={() => setAdminOpen(true)}
+        onGpxClick={() => setGpxOpen(true)}
         isRefreshing={refreshing}
         badgeCount={badgeCount}
-        onRefresh={() => loadAll()}
+        onRefresh={handleRefresh}
       />
       <main className="max-w-lg mx-auto px-2 pb-10 pt-1">
         <CalendarView
@@ -340,6 +345,12 @@ function App() {
         open={adminOpen}
         onClose={() => setAdminOpen(false)}
         actor={actor}
+      />
+      <GpxPanel
+        open={gpxOpen}
+        onClose={() => setGpxOpen(false)}
+        actor={actor}
+        currentUser={currentUser}
       />
       <Toaster position="top-center" richColors />
       {/* PWA icons - required for manifest, do not remove */}

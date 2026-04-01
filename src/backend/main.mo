@@ -7,7 +7,6 @@ import Map "mo:core/Map";
 actor {
   type Role = { #user; #admin };
 
-  // UserRecord deliberately kept simple (no color field) to preserve stable storage
   type UserRecord = { username : Text; pin : Text };
 
   type OldActivity = {
@@ -37,6 +36,14 @@ actor {
     timestamp : Int;
   };
 
+  type GpxFile = {
+    id : Nat;
+    username : Text;
+    filename : Text;
+    content : Text;
+    timestamp : Int;
+  };
+
   // Legacy stable vars retained for upgrade compatibility -- NOT used in logic
   stable var users : Map.Map<Text, Text> = Map.empty();
   stable var activityDays : Map.Map<Text, Map.Map<Nat, OldActivity>> = Map.empty();
@@ -53,6 +60,9 @@ actor {
   stable var _visibility : [(Nat, Text)] = [];
   // Per-user colors: (username, cssColor)
   stable var _userColors : [(Text, Text)] = [];
+  // GPX files
+  stable var _gpxFiles : [GpxFile] = [];
+  stable var _nextGpxId : Nat = 0;
 
   // AUTH
   public shared func login(pin : Text) : async (Text, Role) {
@@ -78,7 +88,6 @@ actor {
       };
     };
     _users := Array.append(_users, [{ username = name; pin = pin }]);
-    // Store color (replace if exists)
     _userColors := Array.filter<(Text, Text)>(_userColors, func(c) { c.0 != name });
     if (color != "") {
       _userColors := Array.append(_userColors, [(name, color)]);
@@ -143,7 +152,6 @@ actor {
     id;
   };
 
-  // Set visibility: "wszyscy" means public; otherwise comma-separated usernames
   public shared func setVisibility(activityId : Nat, vis : Text) : async () {
     _visibility := Array.filter<(Nat, Text)>(
       _visibility,
@@ -244,5 +252,53 @@ actor {
 
   public query func getMessages(threadId : Text) : async [Message] {
     Array.filter<Message>(_messages, func(m) { m.threadId == threadId });
+  };
+
+  // GPX FILES
+  public shared func addGpxFile(username : Text, filename : Text, content : Text) : async Nat {
+    if (content.size() > 500_000) {
+      throw Error.reject("Plik GPX zbyt duzy (max 500KB)");
+    };
+    // Auto-delete oldest if already 3 files
+    if (_gpxFiles.size() >= 3) {
+      var oldestIdx = 0;
+      var oldestTs = _gpxFiles[0].timestamp;
+      var i = 1;
+      while (i < _gpxFiles.size()) {
+        if (_gpxFiles[i].timestamp < oldestTs) {
+          oldestTs := _gpxFiles[i].timestamp;
+          oldestIdx := i;
+        };
+        i += 1;
+      };
+      let oldestId = _gpxFiles[oldestIdx].id;
+      _gpxFiles := Array.filter<GpxFile>(_gpxFiles, func(f) { f.id != oldestId });
+    };
+    let id = _nextGpxId;
+    _nextGpxId += 1;
+    _gpxFiles := Array.append(
+      _gpxFiles,
+      [{ id; username; filename; content; timestamp = Time.now() }],
+    );
+    id;
+  };
+
+  public query func getGpxFiles() : async [(Nat, Text, Text, Int)] {
+    Array.map<GpxFile, (Nat, Text, Text, Int)>(_gpxFiles, func(f) {
+      (f.id, f.username, f.filename, f.timestamp)
+    });
+  };
+
+  public query func getGpxContent(fileId : Nat) : async Text {
+    for (f in _gpxFiles.vals()) {
+      if (f.id == fileId) { return f.content };
+    };
+    throw Error.reject("Plik nie znaleziony");
+  };
+
+  public shared func deleteGpxFile(fileId : Nat) : async Bool {
+    let before = _gpxFiles.size();
+    _gpxFiles := Array.filter<GpxFile>(_gpxFiles, func(f) { f.id != fileId });
+    _gpxFiles.size() < before;
   };
 };

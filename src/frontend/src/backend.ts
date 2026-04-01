@@ -123,6 +123,10 @@ export interface backendInterface {
     purgeOldActivities(todayKey: string): Promise<boolean>;
     removeUser(name: string): Promise<void>;
     updateActivityTime(activityId: bigint, newStartTime: string): Promise<boolean>;
+    addGpxFile(username: string, filename: string, content: string): Promise<bigint>;
+    getGpxFiles(): Promise<Array<[bigint, string, string, bigint]>>;
+    getGpxContent(fileId: bigint): Promise<string>;
+    deleteGpxFile(fileId: bigint): Promise<boolean>;
 }
 import type { Role as _Role } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -324,6 +328,62 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.updateActivityTime(arg0, arg1);
+            return result;
+        }
+    }
+    async addGpxFile(arg0: string, arg1: string, arg2: string): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await (this.actor as any).addGpxFile(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await (this.actor as any).addGpxFile(arg0, arg1, arg2);
+            return result;
+        }
+    }
+    async getGpxFiles(): Promise<Array<[bigint, string, string, bigint]>> {
+        if (this.processError) {
+            try {
+                const result = await (this.actor as any).getGpxFiles();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await (this.actor as any).getGpxFiles();
+            return result;
+        }
+    }
+    async getGpxContent(arg0: bigint): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await (this.actor as any).getGpxContent(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await (this.actor as any).getGpxContent(arg0);
+            return result;
+        }
+    }
+    async deleteGpxFile(arg0: bigint): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await (this.actor as any).deleteGpxFile(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await (this.actor as any).deleteGpxFile(arg0);
             return result;
         }
     }

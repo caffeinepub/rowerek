@@ -41,4 +41,8 @@ export interface backendInterface {
     removeUser(name: string): Promise<void>;
     setVisibility(activityId: bigint, vis: string): Promise<void>;
     updateActivityTime(activityId: bigint, newStartTime: string): Promise<boolean>;
+    addGpxFile(username: string, filename: string, content: string): Promise<bigint>;
+    getGpxFiles(): Promise<Array<[bigint, string, string, bigint]>>;
+    getGpxContent(fileId: bigint): Promise<string>;
+    deleteGpxFile(fileId: bigint): Promise<boolean>;
 }
