@@ -31,15 +31,23 @@ export const idlService = IDL.Service({
       [IDL.Nat],
       [],
     ),
+  'addGpxFile' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Nat], []),
   'addMessage' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Nat], []),
   'addUser' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
   'deleteActivity' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+  'deleteGpxFile' : IDL.Func([IDL.Nat], [IDL.Bool], []),
   'getActivitiesFiltered' : IDL.Func(
       [IDL.Text, IDL.Text],
       [IDL.Vec(Activity)],
       ['query'],
     ),
   'getActivitiesForDay' : IDL.Func([IDL.Text], [IDL.Vec(Activity)], ['query']),
+  'getGpxContent' : IDL.Func([IDL.Nat], [IDL.Text], ['query']),
+  'getGpxFiles' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Nat, IDL.Text, IDL.Text, IDL.Int))],
+      ['query'],
+    ),
   'getMessages' : IDL.Func([IDL.Text], [IDL.Vec(Message)], ['query']),
   'getUsers' : IDL.Func(
       [],
@@ -80,9 +88,11 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Nat],
         [],
       ),
+    'addGpxFile' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Nat], []),
     'addMessage' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Nat], []),
     'addUser' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
     'deleteActivity' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+    'deleteGpxFile' : IDL.Func([IDL.Nat], [IDL.Bool], []),
     'getActivitiesFiltered' : IDL.Func(
         [IDL.Text, IDL.Text],
         [IDL.Vec(Activity)],
@@ -91,6 +101,12 @@ export const idlFactory = ({ IDL }) => {
     'getActivitiesForDay' : IDL.Func(
         [IDL.Text],
         [IDL.Vec(Activity)],
+        ['query'],
+      ),
+    'getGpxContent' : IDL.Func([IDL.Nat], [IDL.Text], ['query']),
+    'getGpxFiles' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Nat, IDL.Text, IDL.Text, IDL.Int))],
         ['query'],
       ),
     'getMessages' : IDL.Func([IDL.Text], [IDL.Vec(Message)], ['query']),

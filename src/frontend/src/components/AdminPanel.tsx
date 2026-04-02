@@ -14,13 +14,29 @@ import type { backendInterface } from "../backend";
 
 const PASTEL_PALETTE = [
   "#6eaed1",
-  "#6dbf8e",
-  "#a07bc0",
-  "#d47a8a",
-  "#c9a05c",
   "#5aa3b8",
+  "#4db8d4",
+  "#5ec9e8",
+  "#6dbf8e",
   "#7ab87a",
+  "#5cb87a",
+  "#8ec98a",
+  "#a07bc0",
   "#b07ab0",
+  "#c07ab0",
+  "#8b6ab8",
+  "#d47a8a",
+  "#e08090",
+  "#d46080",
+  "#e09070",
+  "#c9a05c",
+  "#d4b050",
+  "#c8904c",
+  "#b8985a",
+  "#7090c8",
+  "#6080d0",
+  "#8090c0",
+  "#90a0d0",
 ];
 
 interface AdminPanelProps {
@@ -130,7 +146,7 @@ export default function AdminPanel({ open, onClose, actor }: AdminPanelProps) {
             <div className="text-sm font-medium text-muted-foreground">
               Kolor użytkownika
             </div>
-            <div className="flex gap-2 flex-wrap">
+            <div className="grid grid-cols-8 gap-2">
               {PASTEL_PALETTE.map((c) => (
                 <button
                   key={c}

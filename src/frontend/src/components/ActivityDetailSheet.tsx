@@ -95,7 +95,6 @@ function ChatSection({
     setSending(true);
     try {
       await actor.addMessage(threadId, currentUser.username, msgText.trim());
-      // Re-fetch messages after send
       const updated = await actor.getMessages(threadId);
       setMessages(updated);
       scrollToBottom();
@@ -118,15 +117,14 @@ function ChatSection({
   };
 
   return (
-    <div className="flex flex-col gap-2" data-ocid="activity.panel">
+    <div className="flex flex-col gap-1.5" data-ocid="activity.panel">
       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-0.5">
         Wątek rozmowy
       </div>
 
-      {/* Messages list */}
       <div className="rounded-xl border border-border bg-muted/30 overflow-hidden">
-        <ScrollArea className="max-h-[200px]">
-          <div className="flex flex-col gap-1 p-2 min-h-[60px]">
+        <ScrollArea className="max-h-[220px]">
+          <div className="flex flex-col gap-0.5 p-2 min-h-[60px]">
             {loadingMsgs ? (
               <p
                 className="text-xs text-muted-foreground italic text-center py-3"
@@ -147,7 +145,7 @@ function ChatSection({
                 return (
                   <div
                     key={msg.id.toString()}
-                    className="flex flex-col gap-0.5 px-1 py-1 rounded-lg hover:bg-muted/50 transition-colors"
+                    className="flex flex-col gap-0.5 px-1 py-0.5 rounded-lg hover:bg-muted/50 transition-colors"
                     data-ocid={`activity.item.${i + 1}`}
                   >
                     <div className="flex items-baseline gap-1.5">
@@ -173,7 +171,6 @@ function ChatSection({
         </ScrollArea>
       </div>
 
-      {/* Input */}
       {currentUser ? (
         <div className="flex gap-2 items-center">
           <input
@@ -318,13 +315,13 @@ export default function ActivityDetailSheet({
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent
         side="bottom"
-        className="rounded-t-2xl pb-10 max-h-[85vh] overflow-y-auto"
+        className="rounded-t-2xl pb-8 max-h-[85vh] overflow-y-auto"
         onInteractOutside={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => e.preventDefault()}
         onFocusOutside={(e) => e.preventDefault()}
         data-ocid="activity.popover"
       >
-        <SheetHeader className="mb-4">
+        <SheetHeader className="mb-3">
           <SheetTitle className="flex items-center gap-2">
             <span className="text-2xl">{activity.emoji}</span>
             <div>
@@ -340,8 +337,8 @@ export default function ActivityDetailSheet({
         </SheetHeader>
 
         {isOwn ? (
-          <div className="flex flex-col gap-4">
-            {/* Chat section above edit controls */}
+          <div className="flex flex-col gap-3">
+            {/* Chat section */}
             <ChatSection
               threadId={threadId}
               actor={actor}
@@ -350,12 +347,16 @@ export default function ActivityDetailSheet({
 
             <div className="h-px bg-border" />
 
-            <div className="flex flex-col gap-1.5">
-              <div className="text-sm font-medium text-foreground">
-                Zmień godzinę
+            {/* Time change */}
+            <div className="flex items-center gap-2">
+              <div className="text-sm font-medium text-foreground shrink-0">
+                Godzina:
               </div>
               <Select value={newTime} onValueChange={setNewTime}>
-                <SelectTrigger className="w-full" data-ocid="activity.select">
+                <SelectTrigger
+                  className="flex-1 h-9"
+                  data-ocid="activity.select"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="max-h-60">
@@ -381,30 +382,29 @@ export default function ActivityDetailSheet({
                   })}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="flex gap-2">
               <Button
-                className="flex-1"
+                size="sm"
+                className="shrink-0"
                 onClick={handleSave}
                 disabled={saving || newTime === activity.startTime}
                 data-ocid="activity.save_button"
               >
-                {saving ? "Zapisuję..." : "Zapisz"}
+                {saving ? "..." : "Zmień"}
               </Button>
               <Button
                 variant="destructive"
-                className="flex-1"
+                size="sm"
+                className="shrink-0"
                 onClick={handleDelete}
                 disabled={deleting}
                 data-ocid="activity.delete_button"
               >
-                {deleting ? "Usuwam..." : "Usuń"}
+                {deleting ? "..." : "Usuń"}
               </Button>
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
-            {/* Chat section above join button */}
+          <div className="flex flex-col gap-3">
             <ChatSection
               threadId={threadId}
               actor={actor}
