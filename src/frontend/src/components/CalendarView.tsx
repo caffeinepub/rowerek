@@ -29,7 +29,7 @@ export default function CalendarView({
   if (loading) {
     return (
       <div
-        className="flex flex-col gap-2 mt-3"
+        className="flex flex-col gap-3 mt-3"
         data-ocid="calendar.loading_state"
       >
         {SKELETON_IDS.map((id) => (
@@ -40,7 +40,7 @@ export default function CalendarView({
   }
 
   return (
-    <div className="flex flex-col gap-1.5 mt-3">
+    <div className="flex flex-col gap-3 mt-3">
       {dateKeys.map((dk, index) => (
         <DayRow
           key={dk}

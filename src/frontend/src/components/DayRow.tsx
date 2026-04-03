@@ -112,7 +112,7 @@ export default function DayRow({
 
   return (
     <div
-      className="rounded-lg border border-border overflow-hidden bg-card"
+      className="rounded-lg border border-border overflow-hidden bg-card/70"
       data-ocid={`calendar.day.item.${index}`}
     >
       <div className="flex items-stretch min-h-[64px]">
@@ -144,7 +144,7 @@ export default function DayRow({
 
         {/* Activities area - clicking empty space opens add panel */}
         <div
-          className="flex-1 p-1.5 pl-1 bg-card cursor-pointer"
+          className="flex-1 p-1.5 pl-1 bg-card/60 cursor-pointer"
           onClick={handleAddClick}
           // biome-ignore lint/a11y/useSemanticElements: cannot use button here due to nested button children
           role="button"
