@@ -301,40 +301,55 @@ function App() {
   }, [loadAll]);
 
   return (
-    <div className="min-h-screen bg-background font-body">
-      <Header
-        currentUser={currentUser}
-        onLoginClick={() => setLoginOpen(true)}
-        onLogout={handleLogout}
-        onAdminClick={() => setAdminOpen(true)}
-        onGpxClick={() => setGpxOpen(true)}
-        isRefreshing={refreshing}
-        badgeCount={badgeCount}
-        onRefresh={handleRefresh}
+    <div
+      className="min-h-screen font-body relative"
+      style={{
+        backgroundImage: `url('/assets/generated/forest-wallpaper.dim_1080x1920.jpg')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center top",
+        backgroundAttachment: "fixed",
+      }}
+    >
+      {/* Dark overlay so text stays readable */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{ background: "rgba(5, 10, 20, 0.72)", zIndex: 0 }}
       />
-      <main className="max-w-lg mx-auto px-2 pb-10 pt-1">
-        <CalendarView
-          dateKeys={dateKeys}
-          activities={activities}
-          loading={loading}
+      <div className="relative" style={{ zIndex: 1 }}>
+        <Header
           currentUser={currentUser}
-          actor={actor}
-          onDayRefresh={loadDay}
-          onSetDayActivities={setDayActivities}
-          onLoginRequired={() => setLoginOpen(true)}
+          onLoginClick={() => setLoginOpen(true)}
+          onLogout={handleLogout}
+          onAdminClick={() => setAdminOpen(true)}
+          onGpxClick={() => setGpxOpen(true)}
+          isRefreshing={refreshing}
+          badgeCount={badgeCount}
+          onRefresh={handleRefresh}
         />
-      </main>
-      <footer className="text-center text-xs text-muted-foreground py-4 border-t border-border">
-        © {new Date().getFullYear()}.{" "}
-        <a
-          href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
-          className="hover:underline"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Zbudowane z ❤️ na caffeine.ai
-        </a>
-      </footer>
+        <main className="max-w-lg mx-auto px-2 pb-10 pt-1">
+          <CalendarView
+            dateKeys={dateKeys}
+            activities={activities}
+            loading={loading}
+            currentUser={currentUser}
+            actor={actor}
+            onDayRefresh={loadDay}
+            onSetDayActivities={setDayActivities}
+            onLoginRequired={() => setLoginOpen(true)}
+          />
+        </main>
+        <footer className="text-center text-xs text-muted-foreground py-4 border-t border-border">
+          © {new Date().getFullYear()}.{" "}
+          <a
+            href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
+            className="hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Zbudowane z ❤️ na caffeine.ai
+          </a>
+        </footer>
+      </div>
       <LoginSheet
         open={loginOpen}
         onClose={() => setLoginOpen(false)}
