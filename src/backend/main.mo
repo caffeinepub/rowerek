@@ -44,7 +44,7 @@ actor {
     timestamp : Int;
   };
 
-  // Legacy stable vars retained for upgrade compatibility -- NOT used in logic
+  // Legacy stable vars -- kept for upgrade compatibility, NOT used in logic
   stable var users : Map.Map<Text, Text> = Map.empty();
   stable var activityDays : Map.Map<Text, Map.Map<Nat, OldActivity>> = Map.empty();
   stable var isLoggedIn : Map.Map<Text, Role> = Map.empty();
