@@ -18,6 +18,7 @@ interface DayRowProps {
   activities: Activity[];
   currentUser: UserSession | null;
   actor: backendInterface | null;
+  userColors: Record<string, string>;
   onRefresh: () => Promise<void>;
   onSetDayActivities: (dateKey: string, activities: Activity[]) => void;
   onLoginRequired: () => void;
@@ -29,6 +30,7 @@ export default function DayRow({
   activities,
   currentUser,
   actor,
+  userColors,
   onRefresh,
   onSetDayActivities,
   onLoginRequired,
@@ -72,7 +74,7 @@ export default function DayRow({
   const getMatchColor = (a: Activity): string | undefined => {
     const k = `${a.emoji}|${a.startTime}`;
     if ((matchKeys[k] ?? 0) <= 1) return undefined;
-    return getUsernameColor(matchCreators[k] ?? a.username);
+    return getUsernameColor(matchCreators[k] ?? a.username, userColors);
   };
 
   const handleAddClick = () => {
@@ -165,6 +167,7 @@ export default function DayRow({
                   matchColor={getMatchColor(a)}
                   isOwn={currentUser?.username === a.username}
                   index={ci + 1}
+                  userColors={userColors}
                   onClick={() => handleCardClick(a)}
                 />
               ))}
@@ -182,6 +185,7 @@ export default function DayRow({
           actor={actor}
           currentUser={currentUser}
           dayActivities={activities}
+          userColors={userColors}
           onSuccess={(newActivity) => {
             setAddOpen(false);
             onSetDayActivities(dateKey, [...activities, newActivity]);
@@ -199,6 +203,7 @@ export default function DayRow({
           currentUser={currentUser}
           allDayActivities={activities}
           actor={actor}
+          userColors={userColors}
           onClose={handleDetailClose}
           onSuccess={(updatedActivities) => {
             handleDetailClose(() => {

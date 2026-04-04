@@ -7,6 +7,7 @@ interface ActivityCardProps {
   matchColor?: string;
   isOwn: boolean;
   index: number;
+  userColors: Record<string, string>;
   onClick: () => void;
 }
 
@@ -35,9 +36,10 @@ export default function ActivityCard({
   isMatching,
   matchColor,
   index,
+  userColors,
   onClick,
 }: ActivityCardProps) {
-  const color = getUsernameColor(activity.username);
+  const color = getUsernameColor(activity.username, userColors);
   const durationHalfHours = Number(activity.durationHours);
   const displayName =
     activity.username.length > 11

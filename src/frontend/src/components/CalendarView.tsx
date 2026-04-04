@@ -9,6 +9,7 @@ interface CalendarViewProps {
   loading: boolean;
   currentUser: UserSession | null;
   actor: backendInterface | null;
+  userColors: Record<string, string>;
   onDayRefresh: (dateKey: string) => Promise<void>;
   onSetDayActivities: (dateKey: string, activities: Activity[]) => void;
   onLoginRequired: () => void;
@@ -22,6 +23,7 @@ export default function CalendarView({
   loading,
   currentUser,
   actor,
+  userColors,
   onDayRefresh,
   onSetDayActivities,
   onLoginRequired,
@@ -49,6 +51,7 @@ export default function CalendarView({
           activities={activities[dk] ?? []}
           currentUser={currentUser}
           actor={actor}
+          userColors={userColors}
           onRefresh={() => onDayRefresh(dk)}
           onSetDayActivities={onSetDayActivities}
           onLoginRequired={onLoginRequired}

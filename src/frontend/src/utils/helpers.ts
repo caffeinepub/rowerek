@@ -45,15 +45,11 @@ const PASTEL_COLORS: string[] = [
   "#7090c8",
 ];
 
-// Module-level store for per-user colors assigned by admin
-let _storedUserColors: Record<string, string> = {};
-
-export function setUserColors(colors: Record<string, string>): void {
-  _storedUserColors = colors;
-}
-
-export function getUsernameColor(username: string): string {
-  if (_storedUserColors[username]) return _storedUserColors[username];
+export function getUsernameColor(
+  username: string,
+  userColors?: Record<string, string>,
+): string {
+  if (userColors?.[username]) return userColors[username];
   let hash = 0;
   for (const c of username)
     hash = (hash * 31 + c.charCodeAt(0)) % PASTEL_COLORS.length;

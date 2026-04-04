@@ -27,6 +27,7 @@ interface ActivityDetailSheetProps {
   currentUser: UserSession;
   allDayActivities: Activity[];
   actor: backendInterface | null;
+  userColors: Record<string, string>;
   onClose: () => void;
   onSuccess: (updatedActivities: Activity[]) => void;
 }
@@ -56,10 +57,12 @@ function ChatSection({
   threadId,
   actor,
   currentUser,
+  userColors,
 }: {
   threadId: string;
   actor: backendInterface | null;
   currentUser: UserSession | null;
+  userColors: Record<string, string>;
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingMsgs, setLoadingMsgs] = useState(true);
@@ -141,7 +144,7 @@ function ChatSection({
               </p>
             ) : (
               messages.map((msg, i) => {
-                const authorColor = getUsernameColor(msg.author);
+                const authorColor = getUsernameColor(msg.author, userColors);
                 return (
                   <div
                     key={msg.id.toString()}
@@ -211,6 +214,7 @@ export default function ActivityDetailSheet({
   currentUser,
   allDayActivities,
   actor,
+  userColors,
   onClose,
   onSuccess,
 }: ActivityDetailSheetProps) {
@@ -219,7 +223,7 @@ export default function ActivityDetailSheet({
   const [deleting, setDeleting] = useState(false);
   const [joining, setJoining] = useState(false);
 
-  const color = getUsernameColor(activity.username);
+  const color = getUsernameColor(activity.username, userColors);
   const durHalfHours = Number(activity.durationHours);
   const durLabel = formatDuration(durHalfHours);
 
@@ -343,6 +347,7 @@ export default function ActivityDetailSheet({
               threadId={threadId}
               actor={actor}
               currentUser={currentUser}
+              userColors={userColors}
             />
 
             <div className="h-px bg-border" />
@@ -409,6 +414,7 @@ export default function ActivityDetailSheet({
               threadId={threadId}
               actor={actor}
               currentUser={currentUser}
+              userColors={userColors}
             />
 
             <div className="h-px bg-border" />

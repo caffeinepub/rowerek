@@ -8,11 +8,7 @@ import GpxPanel from "./components/GpxPanel";
 import Header from "./components/Header";
 import LoginSheet from "./components/LoginSheet";
 import { useActor } from "./hooks/useActor";
-import {
-  formatLocalDate,
-  getNext14DateKeys,
-  setUserColors,
-} from "./utils/helpers";
+import { formatLocalDate, getNext14DateKeys } from "./utils/helpers";
 
 export interface UserSession {
   username: string;
@@ -78,6 +74,8 @@ function App() {
   const [adminOpen, setAdminOpen] = useState(false);
   const [gpxOpen, setGpxOpen] = useState(false);
   const [badgeCount, setBadgeCount] = useState(0);
+  // userColors as React state so components re-render when colors load
+  const [userColors, setUserColors] = useState<Record<string, string>>({});
 
   // Keep ref to current activities + user for event handlers
   const activitiesRef = useRef(activities);
@@ -236,21 +234,25 @@ function App() {
     return () => clearInterval(interval);
   }, [actor, isFetching, loadAll]);
 
-  // Load user colors from backend
-  useEffect(() => {
+  // Load user colors from backend into React state (triggers re-render on components)
+  const loadUserColors = useCallback(async () => {
     if (!actor || isFetching) return;
-    actor
-      .getUsers()
-      .then((rawUsers) => {
-        const users = rawUsers as unknown as Array<[string, string, string]>;
-        const colors: Record<string, string> = {};
-        for (const [name, , color] of users) {
-          if (color) colors[name] = color;
-        }
-        setUserColors(colors);
-      })
-      .catch(() => {});
+    try {
+      const rawUsers = await actor.getUsers();
+      const users = rawUsers as unknown as Array<[string, string, string]>;
+      const colors: Record<string, string> = {};
+      for (const [name, , color] of users) {
+        if (color) colors[name] = color;
+      }
+      setUserColors(colors);
+    } catch {
+      /* ignore */
+    }
   }, [actor, isFetching]);
+
+  useEffect(() => {
+    loadUserColors();
+  }, [loadUserColors]);
 
   // Midnight page reload
   useEffect(() => {
@@ -300,6 +302,12 @@ function App() {
     loadAll({ updateSnapshot: true });
   }, [loadAll]);
 
+  // Reload colors when admin panel closes (user may have been added/modified)
+  const handleAdminClose = useCallback(() => {
+    setAdminOpen(false);
+    loadUserColors();
+  }, [loadUserColors]);
+
   return (
     <div
       className="min-h-screen font-body relative"
@@ -333,6 +341,7 @@ function App() {
             loading={loading}
             currentUser={currentUser}
             actor={actor}
+            userColors={userColors}
             onDayRefresh={loadDay}
             onSetDayActivities={setDayActivities}
             onLoginRequired={() => setLoginOpen(true)}
@@ -356,11 +365,7 @@ function App() {
         actor={actor}
         onLogin={handleLogin}
       />
-      <AdminPanel
-        open={adminOpen}
-        onClose={() => setAdminOpen(false)}
-        actor={actor}
-      />
+      <AdminPanel open={adminOpen} onClose={handleAdminClose} actor={actor} />
       <GpxPanel
         open={gpxOpen}
         onClose={() => setGpxOpen(false)}

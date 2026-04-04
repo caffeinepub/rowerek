@@ -21,6 +21,7 @@ interface AddActivitySheetProps {
   actor: backendInterface | null;
   currentUser: UserSession;
   dayActivities: Activity[];
+  userColors: Record<string, string>;
   onSuccess: (newActivity: Activity) => void;
 }
 
@@ -55,6 +56,7 @@ export default function AddActivitySheet({
   actor,
   currentUser,
   dayActivities,
+  userColors,
   onSuccess,
 }: AddActivitySheetProps) {
   const [time, setTime] = useState("08:00");
@@ -91,7 +93,7 @@ export default function AddActivitySheet({
     }
   }, [open, actor, currentUser.username]);
 
-  const color = getUsernameColor(currentUser.username);
+  const color = getUsernameColor(currentUser.username, userColors);
 
   const selectEmoji = (e: string) => {
     setEmoji(e);
@@ -351,7 +353,9 @@ export default function AddActivitySheet({
                       />
                       <span
                         className="text-sm font-medium"
-                        style={{ color: getUsernameColor(username) }}
+                        style={{
+                          color: getUsernameColor(username, userColors),
+                        }}
                       >
                         {username}
                       </span>
