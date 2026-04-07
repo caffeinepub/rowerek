@@ -18,10 +18,10 @@ export const Activity = IDL.Record({
 });
 export const Message = IDL.Record({
   'id' : IDL.Nat,
-  'threadId' : IDL.Text,
-  'author' : IDL.Text,
   'text' : IDL.Text,
+  'author' : IDL.Text,
   'timestamp' : IDL.Int,
+  'threadId' : IDL.Text,
 });
 export const Role = IDL.Variant({ 'admin' : IDL.Null, 'user' : IDL.Null });
 
@@ -75,13 +75,13 @@ export const idlFactory = ({ IDL }) => {
   });
   const Message = IDL.Record({
     'id' : IDL.Nat,
-    'threadId' : IDL.Text,
-    'author' : IDL.Text,
     'text' : IDL.Text,
+    'author' : IDL.Text,
     'timestamp' : IDL.Int,
+    'threadId' : IDL.Text,
   });
   const Role = IDL.Variant({ 'admin' : IDL.Null, 'user' : IDL.Null });
-
+  
   return IDL.Service({
     'addActivity' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Nat],

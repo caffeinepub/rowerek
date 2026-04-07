@@ -89,6 +89,13 @@ export class ExternalBlob {
         return this;
     }
 }
+export interface Message {
+    id: bigint;
+    text: string;
+    author: string;
+    timestamp: bigint;
+    threadId: string;
+}
 export interface Activity {
     id: bigint;
     startTime: string;
@@ -97,36 +104,29 @@ export interface Activity {
     durationHours: bigint;
     emoji: string;
 }
-export interface Message {
-    id: bigint;
-    threadId: string;
-    author: string;
-    text: string;
-    timestamp: bigint;
-}
 export enum Role {
     admin = "admin",
     user = "user"
 }
 export interface backendInterface {
     addActivity(dateKey: string, username: string, startTime: string, emoji: string, durationHours: bigint): Promise<bigint>;
+    addGpxFile(username: string, filename: string, content: string): Promise<bigint>;
     addMessage(threadId: string, author: string, text: string): Promise<bigint>;
-    getMessages(threadId: string): Promise<Array<Message>>;
     addUser(name: string, pin: string, color: string): Promise<void>;
     deleteActivity(activityId: bigint): Promise<boolean>;
-    getActivitiesForDay(dateKey: string): Promise<Array<Activity>>;
+    deleteGpxFile(fileId: bigint): Promise<boolean>;
     getActivitiesFiltered(dateKey: string, callerUsername: string): Promise<Array<Activity>>;
-    setVisibility(activityId: bigint, vis: string): Promise<void>;
+    getActivitiesForDay(dateKey: string): Promise<Array<Activity>>;
+    getGpxContent(fileId: bigint): Promise<string>;
+    getGpxFiles(): Promise<Array<[bigint, string, string, bigint]>>;
+    getMessages(threadId: string): Promise<Array<Message>>;
     getUsers(): Promise<Array<[string, string, string]>>;
     joinActivity(existingActivityId: bigint, username: string): Promise<bigint>;
     login(pin: string): Promise<[string, Role]>;
     purgeOldActivities(todayKey: string): Promise<boolean>;
     removeUser(name: string): Promise<void>;
+    setVisibility(activityId: bigint, vis: string): Promise<void>;
     updateActivityTime(activityId: bigint, newStartTime: string): Promise<boolean>;
-    addGpxFile(username: string, filename: string, content: string): Promise<bigint>;
-    getGpxFiles(): Promise<Array<[bigint, string, string, bigint]>>;
-    getGpxContent(fileId: bigint): Promise<string>;
-    deleteGpxFile(fileId: bigint): Promise<boolean>;
 }
 import type { Role as _Role } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -145,6 +145,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async addGpxFile(arg0: string, arg1: string, arg2: string): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addGpxFile(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addGpxFile(arg0, arg1, arg2);
+            return result;
+        }
+    }
     async addMessage(arg0: string, arg1: string, arg2: string): Promise<bigint> {
         if (this.processError) {
             try {
@@ -156,20 +170,6 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.addMessage(arg0, arg1, arg2);
-            return result;
-        }
-    }
-    async getMessages(arg0: string): Promise<Array<Message>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getMessages(arg0);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getMessages(arg0);
             return result;
         }
     }
@@ -201,17 +201,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getActivitiesForDay(arg0: string): Promise<Array<Activity>> {
+    async deleteGpxFile(arg0: bigint): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor.getActivitiesForDay(arg0);
+                const result = await this.actor.deleteGpxFile(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getActivitiesForDay(arg0);
+            const result = await this.actor.deleteGpxFile(arg0);
             return result;
         }
     }
@@ -229,16 +229,60 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async setVisibility(arg0: bigint, arg1: string): Promise<void> {
+    async getActivitiesForDay(arg0: string): Promise<Array<Activity>> {
         if (this.processError) {
             try {
-                await this.actor.setVisibility(arg0, arg1);
+                const result = await this.actor.getActivitiesForDay(arg0);
+                return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            await this.actor.setVisibility(arg0, arg1);
+            const result = await this.actor.getActivitiesForDay(arg0);
+            return result;
+        }
+    }
+    async getGpxContent(arg0: bigint): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getGpxContent(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getGpxContent(arg0);
+            return result;
+        }
+    }
+    async getGpxFiles(): Promise<Array<[bigint, string, string, bigint]>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getGpxFiles();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getGpxFiles();
+            return result;
+        }
+    }
+    async getMessages(arg0: string): Promise<Array<Message>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getMessages(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getMessages(arg0);
+            return result;
         }
     }
     async getUsers(): Promise<Array<[string, string, string]>> {
@@ -317,6 +361,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async setVisibility(arg0: bigint, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.setVisibility(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.setVisibility(arg0, arg1);
+            return result;
+        }
+    }
     async updateActivityTime(arg0: bigint, arg1: string): Promise<boolean> {
         if (this.processError) {
             try {
@@ -328,62 +386,6 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.updateActivityTime(arg0, arg1);
-            return result;
-        }
-    }
-    async addGpxFile(arg0: string, arg1: string, arg2: string): Promise<bigint> {
-        if (this.processError) {
-            try {
-                const result = await (this.actor as any).addGpxFile(arg0, arg1, arg2);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await (this.actor as any).addGpxFile(arg0, arg1, arg2);
-            return result;
-        }
-    }
-    async getGpxFiles(): Promise<Array<[bigint, string, string, bigint]>> {
-        if (this.processError) {
-            try {
-                const result = await (this.actor as any).getGpxFiles();
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await (this.actor as any).getGpxFiles();
-            return result;
-        }
-    }
-    async getGpxContent(arg0: bigint): Promise<string> {
-        if (this.processError) {
-            try {
-                const result = await (this.actor as any).getGpxContent(arg0);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await (this.actor as any).getGpxContent(arg0);
-            return result;
-        }
-    }
-    async deleteGpxFile(arg0: bigint): Promise<boolean> {
-        if (this.processError) {
-            try {
-                const result = await (this.actor as any).deleteGpxFile(arg0);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await (this.actor as any).deleteGpxFile(arg0);
             return result;
         }
     }

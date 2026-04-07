@@ -1,0 +1,53 @@
+type Role = 
+ variant {
+   admin;
+   user;
+ };
+type Message = 
+ record {
+   author: text;
+   id: nat;
+   "text": text;
+   threadId: text;
+   timestamp: int;
+ };
+type Activity = 
+ record {
+   dateKey: text;
+   durationHours: nat;
+   emoji: text;
+   id: nat;
+   startTime: text;
+   username: text;
+ };
+service : {
+  addActivity: (dateKey: text, username: text, startTime: text, emoji: 
+   text, durationHours: nat) -> (nat);
+  addGpxFile: (username: text, filename: text, content: text) -> (nat);
+  addMessage: (threadId: text, author: text, "text": text) -> (nat);
+  addUser: (name: text, pin: text, color: text) -> ();
+  deleteActivity: (activityId: nat) -> (bool);
+  deleteGpxFile: (fileId: nat) -> (bool);
+  getActivitiesFiltered: (dateKey: text, callerUsername: text) ->
+   (vec Activity) query;
+  getActivitiesForDay: (dateKey: text) -> (vec Activity) query;
+  getGpxContent: (fileId: nat) -> (text) query;
+  getGpxFiles: () -> (vec record {
+                            nat;
+                            text;
+                            text;
+                            int;
+                          }) query;
+  getMessages: (threadId: text) -> (vec Message) query;
+  getUsers: () -> (vec record {
+                         text;
+                         text;
+                         text;
+                       }) query;
+  joinActivity: (existingActivityId: nat, username: text) -> (nat);
+  login: (pin: text) -> (text, Role);
+  purgeOldActivities: (todayKey: text) -> (bool);
+  removeUser: (name: text) -> ();
+  setVisibility: (activityId: nat, vis: text) -> ();
+  updateActivityTime: (activityId: nat, newStartTime: text) -> (bool);
+}

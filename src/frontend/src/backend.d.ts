@@ -7,6 +7,13 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
+export interface Message {
+    id: bigint;
+    text: string;
+    author: string;
+    timestamp: bigint;
+    threadId: string;
+}
 export interface Activity {
     id: bigint;
     startTime: string;
@@ -15,24 +22,21 @@ export interface Activity {
     durationHours: bigint;
     emoji: string;
 }
-export interface Message {
-    id: bigint;
-    threadId: string;
-    author: string;
-    text: string;
-    timestamp: bigint;
-}
 export enum Role {
     admin = "admin",
     user = "user"
 }
 export interface backendInterface {
     addActivity(dateKey: string, username: string, startTime: string, emoji: string, durationHours: bigint): Promise<bigint>;
+    addGpxFile(username: string, filename: string, content: string): Promise<bigint>;
     addMessage(threadId: string, author: string, text: string): Promise<bigint>;
     addUser(name: string, pin: string, color: string): Promise<void>;
     deleteActivity(activityId: bigint): Promise<boolean>;
+    deleteGpxFile(fileId: bigint): Promise<boolean>;
     getActivitiesFiltered(dateKey: string, callerUsername: string): Promise<Array<Activity>>;
     getActivitiesForDay(dateKey: string): Promise<Array<Activity>>;
+    getGpxContent(fileId: bigint): Promise<string>;
+    getGpxFiles(): Promise<Array<[bigint, string, string, bigint]>>;
     getMessages(threadId: string): Promise<Array<Message>>;
     getUsers(): Promise<Array<[string, string, string]>>;
     joinActivity(existingActivityId: bigint, username: string): Promise<bigint>;
@@ -41,8 +45,4 @@ export interface backendInterface {
     removeUser(name: string): Promise<void>;
     setVisibility(activityId: bigint, vis: string): Promise<void>;
     updateActivityTime(activityId: bigint, newStartTime: string): Promise<boolean>;
-    addGpxFile(username: string, filename: string, content: string): Promise<bigint>;
-    getGpxFiles(): Promise<Array<[bigint, string, string, bigint]>>;
-    getGpxContent(fileId: bigint): Promise<string>;
-    deleteGpxFile(fileId: bigint): Promise<boolean>;
 }
