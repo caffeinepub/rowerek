@@ -51,7 +51,7 @@ export default function ActivityCard({
   return (
     <button
       type="button"
-      className={`relative w-full text-left cursor-pointer rounded-md border transition-all card-press select-none bg-transparent ${
+      className={`relative w-full text-left cursor-pointer rounded-md border transition-all card-press select-none bg-black/25 ${
         isMatching
           ? "border-transparent"
           : "border-border hover:border-primary/40"
