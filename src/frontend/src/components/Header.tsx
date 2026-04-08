@@ -50,32 +50,28 @@ export default function Header({
             aria-label="Odśwież"
             data-ocid="header.refresh_button"
           >
-            {isRefreshing ? (
-              <svg
-                className="animate-spin w-6 h-6 text-primary"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                role="img"
-                aria-label="Odświeżanie"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                />
-              </svg>
-            ) : (
-              <span className="text-xl">🚴</span>
-            )}
+            <svg
+              className={`w-6 h-6 text-primary${isRefreshing ? " animate-spin" : ""}`}
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              role="img"
+              aria-label={isRefreshing ? "Odświeżanie" : "Odśwież"}
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="3"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              />
+            </svg>
             {badgeCount > 0 && (
               <span
                 className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center px-[3px] leading-none pointer-events-none"
@@ -85,9 +81,14 @@ export default function Header({
               </span>
             )}
           </button>
-          <span className="text-lg font-display font-bold text-foreground tracking-tight">
-            Rowerek
-          </span>
+          <div className="flex flex-col leading-tight">
+            <span className="text-lg font-display font-bold tracking-tight text-sky-300">
+              Rower
+            </span>
+            <span className="text-[9px] text-blue-500 leading-none">
+              Waldemar Dębski
+            </span>
+          </div>
         </div>
         <div className="flex items-center gap-1">
           <Button

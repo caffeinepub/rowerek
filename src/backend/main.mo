@@ -2,9 +2,9 @@ import Array "mo:base/Array";
 import Error "mo:base/Error";
 import Time "mo:base/Time";
 import Text "mo:base/Text";
-import Migration "migration";
 
-(with migration = Migration.run)
+
+
 actor {
   type Role = { #user; #admin };
 

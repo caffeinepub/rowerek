@@ -39,8 +39,9 @@ export default function GpxPanel({
     try {
       const result = await actor.getGpxFiles();
       setFiles(result);
-    } catch {
-      toast.error("Błąd ładowania plików GPX");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Błąd ładowania plików GPX: ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -67,30 +68,53 @@ export default function GpxPanel({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch {
-      toast.error("Błąd pobierania pliku");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Błąd pobierania: ${msg}`);
     } finally {
       setDownloadingId(null);
     }
+  };
+
+  const readFileAsText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result;
+        if (typeof result === "string") {
+          resolve(result);
+        } else {
+          reject(new Error("Nie można odczytać pliku"));
+        }
+      };
+      reader.onerror = () => reject(new Error("Błąd odczytu pliku"));
+      reader.readAsText(file, "UTF-8");
+    });
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !actor || !currentUser) return;
 
-    if (!file.name.endsWith(".gpx")) {
+    if (!file.name.toLowerCase().endsWith(".gpx")) {
       toast.error("Tylko pliki .gpx są dozwolone");
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
     setUploading(true);
     try {
-      const content = await file.text();
+      const content = await readFileAsText(file);
+      if (!content || content.trim().length === 0) {
+        toast.error("Plik GPX jest pusty");
+        return;
+      }
       await actor.addGpxFile(currentUser.username, file.name, content);
       toast.success("Plik GPX dodany", { duration: 1500 });
       await fetchFiles();
-    } catch {
-      toast.error("Błąd przesyłania pliku");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Błąd przesyłania: ${msg}`);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
