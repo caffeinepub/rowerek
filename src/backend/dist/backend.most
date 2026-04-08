@@ -1,5 +1,14 @@
-// Version: 1.0.0
+// Version: 3.0.0
 type Activity__391177660 =
+  {
+    dateKey : Text;
+    durationHours : Nat;
+    emoji : Text;
+    id : Nat;
+    startTime : Text;
+    username : Text
+  };
+type Activity__40321653 =
   {
     dateKey : Text;
     durationHours : Nat;
@@ -18,6 +27,14 @@ type GpxFile__620309057 =
     timestamp : Int;
     username : Text
   };
+type GpxFile__99640719 =
+  {
+    content : Text;
+    filename : Text;
+    id : Nat;
+    timestamp : Int;
+    username : Text
+  };
 type Internal__8484328<K, V> =
   {children : [var ?Node__46230540<K, V>]; data : Data__791452850<K, V>};
 type Leaf__809889148<K, V> = {data : Data__791452850<K, V>};
@@ -27,11 +44,13 @@ type Map__297112838<K, V> =
 type Map__605269027<K, V> = Map__158565046<K, V>;
 type Message__19119041 =
   {author : Text; id : Nat; text : Text; threadId : Text; timestamp : Int};
+type Message__56824888 =
+  {author : Text; id : Nat; text : Text; threadId : Text; timestamp : Int};
 type Nat__490723111 = Nat__920180692;
 type Nat__920180692 = Nat;
 type Node__46230540<K, V> =
   {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
-type OldActivity__916611863 =
+type OldActivity__72390527 =
   {
     dateKey : Text;
     durationHours : Nat;
@@ -41,9 +60,25 @@ type OldActivity__916611863 =
     startTime : Text;
     username : Text
   };
-type Role__931309261 = {#admin; #user};
+type Role__139301223 = {#admin; #user};
 type UserRecord__235003723 = {pin : Text; username : Text};
-actor {
+type UserRecord__599822777 = {pin : Text; username : Text};
+actor ({
+  in _activities : [Activity__40321653];
+  in _gpxFiles : [GpxFile__99640719];
+  in _messages : [Message__56824888];
+  in _nextActivityId : Nat;
+  in _nextGpxId : Nat;
+  in _nextMessageId : Nat;
+  in _userColors : [(Text, Text)];
+  in _users : [UserRecord__599822777];
+  in _visibility : [(Nat, Text)];
+  in activityDays :
+    Map__605269027<Text, Map__605269027<Nat, OldActivity__72390527>>;
+  in isLoggedIn : Map__605269027<Text, Role__139301223>;
+  in nextActivityId : Nat;
+  in users : Map__605269027<Text, Text>
+}, {
   stable var _activities : [Activity__391177660];
   stable var _gpxFiles : [GpxFile__620309057];
   stable var _messages : [Message__19119041];
@@ -52,19 +87,5 @@ actor {
   stable var _nextMessageId : Nat;
   stable var _userColors : [(Text, Text)];
   stable var _users : [UserRecord__235003723];
-  stable var _visibility : [(Nat, Text)];
-  stable var activityDays :
-    {
-      var root :
-        Node__46230540<Text, Map__605269027<Nat, OldActivity__916611863>>;
-      var size : Nat__490723111
-    };
-  stable var isLoggedIn :
-    {
-      var root : Node__46230540<Text, Role__931309261>;
-      var size : Nat__490723111
-    };
-  stable var nextActivityId : Nat;
-  stable var users :
-    {var root : Node__46230540<Text, Text>; var size : Nat__490723111}
-};
+  stable var _visibility : [(Nat, Text)]
+}) ;

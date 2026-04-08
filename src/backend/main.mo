@@ -2,8 +2,9 @@ import Array "mo:base/Array";
 import Error "mo:base/Error";
 import Time "mo:base/Time";
 import Text "mo:base/Text";
-import Map "mo:core/Map";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
   type Role = { #user; #admin };
 
@@ -44,25 +45,19 @@ actor {
     timestamp : Int;
   };
 
-  // Legacy stable vars -- kept for upgrade compatibility (migration), NOT used in logic
-  stable var users : Map.Map<Text, Text> = Map.empty();
-  stable var activityDays : Map.Map<Text, Map.Map<Nat, OldActivity>> = Map.empty();
-  stable var isLoggedIn : Map.Map<Text, Role> = Map.empty();
-  stable var nextActivityId : Nat = 0;
-
-  // Active flat stable vars
-  stable var _users : [UserRecord] = [];
-  stable var _activities : [Activity] = [];
-  stable var _messages : [Message] = [];
-  stable var _nextActivityId : Nat = 0;
-  stable var _nextMessageId : Nat = 0;
+  // Active flat vars (enhanced orthogonal persistence -- no stable keyword needed)
+  var _users : [UserRecord] = [];
+  var _activities : [Activity] = [];
+  var _messages : [Message] = [];
+  var _nextActivityId : Nat = 0;
+  var _nextMessageId : Nat = 0;
   // Visibility: (activityId, vis) where vis = "wszyscy" | comma-separated usernames
-  stable var _visibility : [(Nat, Text)] = [];
+  var _visibility : [(Nat, Text)] = [];
   // Per-user colors: (username, cssColor)
-  stable var _userColors : [(Text, Text)] = [];
+  var _userColors : [(Text, Text)] = [];
   // GPX files
-  stable var _gpxFiles : [GpxFile] = [];
-  stable var _nextGpxId : Nat = 0;
+  var _gpxFiles : [GpxFile] = [];
+  var _nextGpxId : Nat = 0;
 
   // AUTH
   public shared func login(pin : Text) : async (Text, Role) {
